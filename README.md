@@ -1,5 +1,7 @@
 # Email Security Analyzer Ultimate
 
+<img width="2752" height="1492" alt="unnamed" src="https://github.com/user-attachments/assets/524533d3-2791-4e77-b651-ac7b250bb926" />
+
 A professional desktop application for comprehensive email security analysis, breach detection, and threat intelligence. Built with Python and CustomTkinter.
 
 **Version:** 6.0.2 | **Python:** 3.7+ (optimized for 3.13) | **Platform:** Windows
