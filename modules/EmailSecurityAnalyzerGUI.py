@@ -256,8 +256,6 @@ class EmailSecurityAnalyzerGUI:
         self.title_label.pack(anchor="w")
 
         version_text = "Ultimate Security Suite • Real-time Protection • AI-Powered Analysis"
-        if PYTHON_313_COMPAT:
-            version_text += " • Python 3.13 Mode"
 
         self.subtitle_label = ctk.CTkLabel(
             title_frame,
@@ -407,8 +405,6 @@ class EmailSecurityAnalyzerGUI:
 
         # Connection indicator
         connection_text = "● Connected"
-        if PYTHON_313_COMPAT:
-            connection_text += " (Limited ML)"
 
         self.connection_indicator = ctk.CTkLabel(
             status_content,
@@ -838,7 +834,7 @@ class EmailSecurityAnalyzerGUI:
             ml_checkbox.configure(state="disabled")
             ctk.CTkLabel(
                 options_frame,
-                text="(ML disabled due to Python 3.13)",
+                text="(ML analysis disabled in settings)",
                 font=ctk.CTkFont(size=12),
                 text_color=COLORS['warning']
             ).pack(anchor="w")
@@ -2285,12 +2281,6 @@ Monitoring continues...
                     )
                     switch.pack(side="right", padx=10)
 
-                    # Disable ML switch if Python 3.13
-                    if key == 'enable_ml' and PYTHON_313_COMPAT:
-                        switch.configure(state="disabled")
-                        var.set(False)
-                        status_text.configure(text="DISABLED", text_color=COLORS['warning'])
-
                     self.settings_vars[key] = var
 
                 elif setting_type == 'slider':
@@ -2438,10 +2428,7 @@ Monitoring continues...
         if self.analyzer and hasattr(self.analyzer, 'ml_engine') and hasattr(self.analyzer.ml_engine, 'models'):
             ml_models = len(self.analyzer.ml_engine.models)
 
-        if getattr(self.config, 'force_enable_ml', False) and not self.config.enable_ml:
-            ml_status = 'Force-Enabled (compatibility mode)'
-        else:
-            ml_status = 'Enabled' if self.config.enable_ml else 'Disabled (Python 3.13)'
+        ml_status = 'Enabled' if self.config.enable_ml else 'Disabled'
 
         system_info = f"""
         System Information:
@@ -2642,7 +2629,7 @@ Monitoring continues...
                 else:
                     status_msg = "Ready"
                     if not self.config.enable_ml:
-                        status_msg += " - ML disabled (Python 3.13)"
+                        status_msg += " - ML disabled"
                     self.update_status(status_msg)
             self.ui(post_ml_status)
 
@@ -6504,8 +6491,6 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
                     current = self.connection_indicator.cget("text")
                     if "Connected" in current:
                         text = "● Connected"
-                        if PYTHON_313_COMPAT:
-                            text += " (Limited ML)"
                         self.connection_indicator.configure(
                             text=text,
                             text_color=COLORS['success']
