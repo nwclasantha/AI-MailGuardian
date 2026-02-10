@@ -65,6 +65,7 @@ class ThreatIntelligenceEngine:
         self.threat_feeds = {}
         self.breach_db = None
         self._db_lock = threading.Lock()
+        self._cache_lock = threading.Lock()
         self.reputation_cache = {}
         self.dns_cache = {}
         self.initialize()
@@ -697,10 +698,11 @@ class ThreatIntelligenceEngine:
         enable_whois = self.config.enable_whois if enable_whois is None else bool(enable_whois)
 
         # Check cache
-        if domain in self.reputation_cache:
-            cache_entry = self.reputation_cache[domain]
-            if (datetime.now() - cache_entry['timestamp']).total_seconds() < 3600:
-                return cache_entry['data']
+        with self._cache_lock:
+            if domain in self.reputation_cache:
+                cache_entry = self.reputation_cache[domain]
+                if (datetime.now() - cache_entry['timestamp']).total_seconds() < 3600:
+                    return cache_entry['data']
 
         # Check threat feeds
         if domain in self.threat_feeds['phishing_domains']:
@@ -793,10 +795,11 @@ class ThreatIntelligenceEngine:
         reputation['score'] = max(0, min(100, reputation['score']))
 
         # Cache result
-        self.reputation_cache[domain] = {
-            'data': reputation,
-            'timestamp': datetime.now()
-        }
+        with self._cache_lock:
+            self.reputation_cache[domain] = {
+                'data': reputation,
+                'timestamp': datetime.now()
+            }
 
         return reputation
 
@@ -818,10 +821,11 @@ class ThreatIntelligenceEngine:
             return dns_security
 
         # Check cache
-        if domain in self.dns_cache:
-            cache_entry = self.dns_cache[domain]
-            if (datetime.now() - cache_entry['timestamp']).total_seconds() < 3600:
-                return cache_entry['data']
+        with self._cache_lock:
+            if domain in self.dns_cache:
+                cache_entry = self.dns_cache[domain]
+                if (datetime.now() - cache_entry['timestamp']).total_seconds() < 3600:
+                    return cache_entry['data']
 
         try:
             resolver = dns.resolver.Resolver()
@@ -896,9 +900,10 @@ class ThreatIntelligenceEngine:
         dns_security['score'] = min(100, dns_security['score'])
 
         # Cache result
-        self.dns_cache[domain] = {
-            'data': dns_security,
-            'timestamp': datetime.now()
-        }
+        with self._cache_lock:
+            self.dns_cache[domain] = {
+                'data': dns_security,
+                'timestamp': datetime.now()
+            }
 
         return dns_security

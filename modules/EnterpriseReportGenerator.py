@@ -35,7 +35,7 @@ class EnterpriseReportGenerator:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{report_title} - Executive Report</title>
+    <title>{self._esc(report_title)} - Executive Report</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -491,7 +491,7 @@ class EnterpriseReportGenerator:
         <div class="header">
             <div class="header-content">
                 <div class="company-logo">🛡️ AI-MailArmor</div>
-                <h1 class="report-title">{report_title}</h1>
+                <h1 class="report-title">{self._esc(report_title)}</h1>
                 <p class="report-subtitle">Enterprise Security Intelligence Report</p>
                 <div class="report-meta">
                     <div class="meta-item">
@@ -1546,7 +1546,7 @@ class EnterpriseReportGenerator:
             sev_color = severity_colors.get(info['severity'], '#667eea')
             avg_conf = sum(info['avg_confidence']) / len(info['avg_confidence']) if info['avg_confidence'] else 0
             affected_emails = list(set(info['emails']))[:5]
-            email_list = ', '.join(affected_emails)
+            email_list = ', '.join(self._esc(e) for e in affected_emails)
             if len(set(info['emails'])) > 5:
                 email_list += f' (+{len(set(info["emails"])) - 5} more)'
 
@@ -1556,8 +1556,8 @@ class EnterpriseReportGenerator:
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <span style="font-size: 28px;">{icon}</span>
                             <div>
-                                <div style="font-weight: 700; font-size: 17px;">{t_type.replace('_', ' ').title()}</div>
-                                <div style="font-size: 13px; opacity: 0.7;">{info['description'][:120]}</div>
+                                <div style="font-weight: 700; font-size: 17px;">{self._esc(t_type.replace('_', ' ').title())}</div>
+                                <div style="font-size: 13px; opacity: 0.7;">{self._esc(info['description'][:120])}</div>
                             </div>
                         </div>
                         <div style="display: flex; gap: 15px; align-items: center;">
@@ -1696,7 +1696,7 @@ class EnterpriseReportGenerator:
                 html += f"""
                 <div style="background: rgba(255,255,255,0.06); border-left: 4px solid #ff3366; border-radius: 0 10px 10px 0; padding: 15px 20px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <div style="font-weight: 600; font-size: 16px;">{d['email']}</div>
+                        <div style="font-weight: 600; font-size: 16px;">{self._esc(d['email'])}</div>
                         <div style="font-size: 12px; opacity: 0.6;">Confidence: {d['confidence']:.0%}</div>
                     </div>
                     <div style="background: #ff3366; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;">Risk: {d['risk_score']}/100</div>
@@ -1717,10 +1717,10 @@ class EnterpriseReportGenerator:
                 <div style="background: rgba(255,255,255,0.06); border-left: 4px solid {similarity_color}; border-radius: 0 10px 10px 0; padding: 15px 20px; margin-bottom: 12px;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <div style="font-weight: 600; font-size: 16px;">{t['email']}</div>
+                            <div style="font-weight: 600; font-size: 16px;">{self._esc(t['email'])}</div>
                             <div style="font-size: 13px; opacity: 0.8; margin-top: 5px;">
-                                Impersonating: <strong style="color: #00d4aa;">{t['target_domain']}</strong> |
-                                Attack: <strong>{t['attack_type'].replace('_', ' ').title()}</strong> |
+                                Impersonating: <strong style="color: #00d4aa;">{self._esc(t['target_domain'])}</strong> |
+                                Attack: <strong>{self._esc(t['attack_type'].replace('_', ' ').title())}</strong> |
                                 Similarity: <strong style="color: {similarity_color};">{t['similarity']:.0%}</strong>
                             </div>
                         </div>
@@ -1858,11 +1858,11 @@ class EnterpriseReportGenerator:
             age_display = f"{info['age']}" if isinstance(info['age'], (int, float)) else 'Unknown'
             age_color = '#ff3366' if isinstance(info['age'], (int, float)) and info['age'] < 30 else '#ffaa00' if isinstance(info['age'], (int, float)) and info['age'] < 365 else '#00d4aa'
             risk_color = '#ff3366' if info['avg_risk'] > 60 else '#ffaa00' if info['avg_risk'] > 40 else '#00d4aa'
-            flags_display = ', '.join(str(f) for f in info['flags'][:4]) if info['flags'] else 'None'
+            flags_display = ', '.join(self._esc(str(f)) for f in info['flags'][:4]) if info['flags'] else 'None'
 
             html += f"""
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                                <td style="padding: 12px 15px; font-weight: 600;">{domain}</td>
+                                <td style="padding: 12px 15px; font-weight: 600;">{self._esc(domain)}</td>
                                 <td style="text-align: center; padding: 12px 15px; color: {rep_color}; font-weight: 700;">{rep_score}</td>
                                 <td style="text-align: center; padding: 12px 15px; color: {age_color}; font-weight: 600;">{age_display}</td>
                                 <td style="text-align: center; padding: 12px 15px; color: {risk_color}; font-weight: 700;">{info['avg_risk']}</td>
@@ -1905,7 +1905,7 @@ class EnterpriseReportGenerator:
             for vt, vinfo in sorted(vuln_by_type.items(), key=lambda x: {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}.get(x[1]['severity'], 4)):
                 icon = vuln_icons.get(vt, '⚠️')
                 sev_color = severity_colors.get(vinfo['severity'], '#667eea')
-                domains_list = ', '.join(list(vinfo['domains'])[:5])
+                domains_list = ', '.join(self._esc(d) for d in list(vinfo['domains'])[:5])
                 if len(vinfo['domains']) > 5:
                     domains_list += f' (+{len(vinfo["domains"]) - 5} more)'
 
@@ -1914,15 +1914,15 @@ class EnterpriseReportGenerator:
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <span style="font-size: 24px;">{icon}</span>
-                            <div style="font-weight: 700; font-size: 16px;">{vt.replace('_', ' ').title()}</div>
+                            <div style="font-weight: 700; font-size: 16px;">{self._esc(vt.replace('_', ' ').title())}</div>
                         </div>
                         <div style="display: flex; gap: 10px; align-items: center;">
                             <span style="font-size: 20px; font-weight: 700; color: {sev_color};">{vinfo['count']}</span>
                             <span style="background: {sev_color}; color: white; padding: 4px 12px; border-radius: 15px; font-size: 11px; font-weight: 600; text-transform: uppercase;">{vinfo['severity']}</span>
                         </div>
                     </div>
-                    <div style="font-size: 13px; opacity: 0.8;">{vinfo['description']}</div>
-                    {'<div style="font-size: 12px; color: #00d4aa; margin-top: 6px;"><strong>Remediation:</strong> ' + vinfo["remediation"] + '</div>' if vinfo['remediation'] else ''}
+                    <div style="font-size: 13px; opacity: 0.8;">{self._esc(vinfo['description'])}</div>
+                    {'<div style="font-size: 12px; color: #00d4aa; margin-top: 6px;"><strong>Remediation:</strong> ' + self._esc(vinfo["remediation"]) + '</div>' if vinfo['remediation'] else ''}
                     <div style="font-size: 11px; opacity: 0.5; margin-top: 6px;">Affected domains: {domains_list}</div>
                 </div>
                 """
@@ -2112,7 +2112,7 @@ class EnterpriseReportGenerator:
                     <div style="background: {bg_color}; border: 1px solid {border_color}; border-radius: 10px; padding: 15px; display: flex; align-items: center; gap: 10px;">
                         <span style="font-size: 22px;">{icon}</span>
                         <div>
-                            <div style="font-weight: 600; font-size: 14px;">{dc}</div>
+                            <div style="font-weight: 600; font-size: 14px;">{self._esc(str(dc))}</div>
                             <div style="font-size: 12px; opacity: 0.6;">{count} exposure(s){'  ⚠️ HIGH' if is_high else ''}</div>
                         </div>
                     </div>
@@ -2137,7 +2137,7 @@ class EnterpriseReportGenerator:
                 html += f"""
                 <div style="background: rgba(255,51,102,0.15); border-left: 5px solid #ff3366; border-radius: 0 10px 10px 0; padding: 15px 20px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <div style="font-weight: 700; font-size: 16px;">{pwd['email']}</div>
+                        <div style="font-weight: 700; font-size: 16px;">{self._esc(pwd['email'])}</div>
                         <div style="font-size: 12px; color: #ff3366; font-weight: 600;">PASSWORD COMPROMISED - CHANGE IMMEDIATELY</div>
                     </div>
                     <div style="background: #ff3366; padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: 700;">Risk: {pwd['risk_score']}/100</div>
@@ -2268,7 +2268,7 @@ class EnterpriseReportGenerator:
 
             html += f"""
                     <tr>
-                        <td class="email-cell" style="font-size: 13px; max-width: 200px; overflow: hidden; text-overflow: ellipsis;">{email}</td>
+                        <td class="email-cell" style="font-size: 13px; max-width: 200px; overflow: hidden; text-overflow: ellipsis;">{self._esc(email)}</td>
                         <td>
                             <span class="score-badge" style="background: {score_color};">{score}</span>
                         </td>
@@ -2288,7 +2288,7 @@ class EnterpriseReportGenerator:
                             <span style="color: {'#ff3366' if is_disposable else '#00d4aa'}; font-weight: 700;">{'🗑️ YES' if is_disposable else '✅ NO'}</span>
                         </td>
                         <td style="text-align: center;">
-                            {'<span style="color: #ff3366; font-weight: 700;" title="Impersonates ' + typosquat_target + '">🎭 ' + typosquat_target + '</span>' if is_typosquat else '<span style="color: #00d4aa;">✅ NO</span>'}
+                            {'<span style="color: #ff3366; font-weight: 700;" title="Impersonates ' + self._esc(typosquat_target) + '">🎭 ' + self._esc(typosquat_target) + '</span>' if is_typosquat else '<span style="color: #00d4aa;">✅ NO</span>'}
                         </td>
                         <td style="text-align: center; font-weight: 600;">
                             {dns_score}
@@ -2399,7 +2399,7 @@ class EnterpriseReportGenerator:
 
             html += f"""
                     <tr>
-                        <td class="email-cell" style="font-size: 13px;">{email}</td>
+                        <td class="email-cell" style="font-size: 13px;">{self._esc(email)}</td>
                         <td style="text-align: center;">
                             <div style="color: {gdpr_art5_color}; font-weight: 700; font-size: 14px;">{gdpr_art5}</div>
                             <div style="font-size: 11px; color: #6c757d; margin-top: 5px;">{gdpr_art5_reason}</div>
@@ -2493,7 +2493,7 @@ class EnterpriseReportGenerator:
             <div style="background: white; border-radius: 20px; padding: 40px; margin-bottom: 30px; border-left: 8px solid {severity_color}; box-shadow: 0 5px 20px rgba(0,0,0,0.08);">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 25px;">
                     <div>
-                        <h3 style="font-size: 24px; color: #1e3c72; margin-bottom: 10px;">{email}</h3>
+                        <h3 style="font-size: 24px; color: #1e3c72; margin-bottom: 10px;">{self._esc(email)}</h3>
                         <div style="display: flex; gap: 15px; align-items: center;">
                             <span class="badge badge-{severity}">Severity: {severity.upper()}</span>
                             <span style="color: #6c757d; font-size: 14px;">{count} breach(es) detected</span>
@@ -2605,10 +2605,10 @@ class EnterpriseReportGenerator:
                     html += f"""
                     <div style="background: white; border-radius: 10px; padding: 15px; margin-bottom: 12px; border-left: 4px solid {confidence_color};">
                         <div style="font-weight: 700; font-size: 15px; color: #1e3c72; margin-bottom: 5px;">
-                            {technique.get('id', 'N/A')}: {technique.get('name', 'Unknown')}
+                            {self._esc(str(technique.get('id', 'N/A')))}: {self._esc(str(technique.get('name', 'Unknown')))}
                         </div>
                         <div style="color: #6c757d; font-size: 13px; margin-bottom: 3px;">
-                            <strong>Tactic:</strong> {technique.get('tactic', 'Unknown')}
+                            <strong>Tactic:</strong> {self._esc(str(technique.get('tactic', 'Unknown')))}
                         </div>
                         <div style="color: {confidence_color}; font-size: 13px; font-weight: 600;">
                             <strong>Confidence:</strong> {similarity:.1f}%
@@ -2629,7 +2629,7 @@ class EnterpriseReportGenerator:
                 """
 
                 for step in breach_info['mitigation_steps'][:5]:
-                    html += f"<li style='margin-bottom: 8px;'>{step}</li>"
+                    html += f"<li style='margin-bottom: 8px;'>{self._esc(str(step))}</li>"
 
                 html += """
                     </ol>

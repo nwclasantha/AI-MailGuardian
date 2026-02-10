@@ -116,6 +116,7 @@ class MachineLearningEngine:
 
         # Feedback database
         self._db_lock = threading.Lock()
+        self._model_lock = threading.Lock()
         self._db_path = str(config.models_dir / 'feedback.db')
         self._init_feedback_db()
 
@@ -225,6 +226,10 @@ class MachineLearningEngine:
         start = time.time()
 
         try:
+            # Always reinitialize raw models (CalibratedClassifierCV wrappers
+            # from previous training can't be re-tuned with RandomizedSearchCV)
+            self._initialize_models()
+
             # Generate or load training data
             X, y = self._get_training_data()
 
@@ -236,10 +241,11 @@ class MachineLearningEngine:
                 X_temp, y_temp, test_size=0.50, random_state=42, stratify=y_temp
             )
 
-            # Scale features
-            X_train_s = self.scaler.fit_transform(X_train)
-            X_cal_s = self.scaler.transform(X_cal)
-            X_test_s = self.scaler.transform(X_test)
+            # Scale features into local variable (swap atomically later)
+            new_scaler = StandardScaler()
+            X_train_s = new_scaler.fit_transform(X_train)
+            X_cal_s = new_scaler.transform(X_cal)
+            X_test_s = new_scaler.transform(X_test)
 
             # Train each model with hyperparameter search
             calibrated_models = {}
@@ -275,15 +281,20 @@ class MachineLearningEngine:
             self._optimize_threshold(X_test_s, y_test)
 
             # Train Isolation Forest on legitimate data only (unsupervised)
+            new_anomaly_fitted = False
             try:
                 legit_mask = y == 0
-                X_legit = self.scaler.transform(X[legit_mask])
+                X_legit = new_scaler.transform(X[legit_mask])
                 self.anomaly_detector.fit(X_legit)
-                self.anomaly_fitted = True
+                new_anomaly_fitted = True
                 logger.info(f"Isolation Forest trained on {len(X_legit)} legitimate samples")
             except Exception as e:
                 logger.warning(f"Isolation Forest training failed: {e}")
-                self.anomaly_fitted = False
+
+            # Atomic swap: replace scaler + anomaly flag under lock
+            with self._model_lock:
+                self.scaler = new_scaler
+                self.anomaly_fitted = new_anomaly_fitted
 
             # Log feature importance
             self._log_feature_importance()
@@ -487,12 +498,20 @@ class MachineLearningEngine:
         elif features.shape[1] > NUM_FEATURES:
             features = features[:, :NUM_FEATURES]
 
+        # Snapshot models/scaler under lock to avoid race with retrain thread
+        with self._model_lock:
+            current_scaler = self.scaler
+            current_models = dict(self.models)
+            current_weights = dict(self.model_weights)
+            current_threshold = self.precision_threshold
+            current_anomaly_fitted = self.anomaly_fitted
+
         try:
-            features_scaled = self.scaler.transform(features)
+            features_scaled = current_scaler.transform(features)
         except Exception:
             features_scaled = features
 
-        for name, model in self.models.items():
+        for name, model in current_models.items():
             try:
                 proba = model.predict_proba(features_scaled)[0]
                 pred_value = float(proba[1]) if len(proba) > 1 else 0.5
@@ -507,7 +526,7 @@ class MachineLearningEngine:
         weighted_sum = 0.0
         total_weight = 0.0
         for name, score in predictions.items():
-            weight = self.model_weights.get(name, 1.0)
+            weight = current_weights.get(name, 1.0)
             weighted_sum += score * weight
             total_weight += weight
 
@@ -518,7 +537,7 @@ class MachineLearningEngine:
         predictions['ensemble'] = float(ensemble_score)
 
         # Unsupervised anomaly score (Isolation Forest)
-        if self.anomaly_fitted:
+        if current_anomaly_fitted:
             try:
                 # score_samples returns negative values; more negative = more anomalous
                 # Typical range: -0.6 (very anomalous) to 0 (normal)
@@ -534,8 +553,8 @@ class MachineLearningEngine:
             predictions['anomaly_score'] = 0.0
 
         # Apply precision threshold for binary classification
-        predictions['is_malicious'] = ensemble_score >= self.precision_threshold
-        predictions['precision_threshold'] = self.precision_threshold
+        predictions['is_malicious'] = ensemble_score >= current_threshold
+        predictions['precision_threshold'] = current_threshold
 
         # Track prediction (cap at 1000 to prevent unbounded memory growth)
         self.prediction_history.append({
@@ -929,6 +948,11 @@ class MachineLearningEngine:
                     y.append(label)
                 elif len(features) > NUM_FEATURES:
                     X.append(features[:NUM_FEATURES])
+                    y.append(label)
+                elif len(features) > 0:
+                    # Pad shorter vectors with zeros (from older versions with fewer features)
+                    padded = features + [0.0] * (NUM_FEATURES - len(features))
+                    X.append(padded)
                     y.append(label)
 
             if X:

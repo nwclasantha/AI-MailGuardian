@@ -208,11 +208,7 @@ class EmailSecurityAnalyzerApp:
             # Check for Python 3.13 compatibility
             if current_version >= self.PYTHON_313_VERSION:
                 self.python_313_compat = True
-                self.logger.warning("Python 3.13+ detected - some ML features may have compatibility issues")
-                print("\nWARNING: Python 3.13+ detected!")
-                print("This version has limited compatibility with some ML libraries.")
-                print("ML features will be disabled or limited.")
-                print("For full functionality, consider using Python 3.11 or 3.12.\n")
+                self.logger.info("Python 3.13+ detected - ML Engine v2 fully supported")
 
             self.logger.debug("Python version check completed")
 
@@ -543,7 +539,7 @@ class EmailSecurityAnalyzerApp:
             print("\n" + "=" * 70)
             print(f"Starting Email Security Analyzer Ultimate v{self.VERSION}...")
             if self.python_313_compat:
-                print("Running in Python 3.13+ compatibility mode")
+                print("Running on Python 3.13+ with ML Engine v2")
             print("=" * 70 + "\n")
 
             # Check dependencies

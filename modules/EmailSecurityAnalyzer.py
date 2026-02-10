@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 # Python 3.13 compatibility check
 if sys.version_info >= (3, 13):
-    logger.warning("Python 3.13 detected - some features may have compatibility issues")
+    logger.info("Python 3.13 detected - ML Engine v2 fully supported")
     PYTHON_313_COMPAT = True
 else:
     PYTHON_313_COMPAT = False

@@ -1,3 +1,4 @@
+import html as html_mod
 import os
 import sys
 import platform
@@ -117,7 +118,7 @@ logger = logging.getLogger(__name__)
 
 # Python 3.13 compatibility check
 if sys.version_info >= (3, 13):
-    logger.warning("Python 3.13 detected - some features may have compatibility issues")
+    logger.info("Python 3.13 detected - ML Engine v2 fully supported")
     PYTHON_313_COMPAT = True
 else:
     PYTHON_313_COMPAT = False
@@ -3742,6 +3743,26 @@ Top Domains:
                     text_color=COLORS['warning']
                 ).pack(pady=5)
 
+    def _get_ml_accuracy_display(self):
+        """Get real ML accuracy for dashboard display."""
+        if not self.config.enable_ml:
+            return "N/A"
+        if (self.analyzer and hasattr(self.analyzer, 'ml_engine')
+                and self.analyzer.ml_engine
+                and hasattr(self.analyzer.ml_engine, 'model_metrics')
+                and self.analyzer.ml_engine.model_metrics):
+            metrics = self.analyzer.ml_engine.model_metrics
+            for name in ['ensemble', 'random_forest', 'xgboost']:
+                if name in metrics and 'accuracy' in metrics[name]:
+                    acc = metrics[name]['accuracy']
+                    if isinstance(acc, (int, float)) and acc > 0:
+                        return f"{acc * 100:.1f}%"
+            first = next(iter(metrics.values()), {})
+            acc = first.get('accuracy', 0)
+            if isinstance(acc, (int, float)) and acc > 0:
+                return f"{acc * 100:.1f}%"
+        return "N/A"
+
     def refresh_dashboard(self):
         """Refresh dashboard data"""
         if not self.current_results:
@@ -3761,7 +3782,7 @@ Top Domains:
             'active_threats': str(threats),
             'safe_emails': str(safe),
             'avg_risk': f"{avg_risk:.1f}",
-            'ml_accuracy': "95.2%" if self.config.enable_ml else "N/A"
+            'ml_accuracy': self._get_ml_accuracy_display()
         }
 
         for card in self.dashboard_cards:
@@ -5117,6 +5138,7 @@ Top Domains:
 
     def generate_single_html_report(self, result):
         """Generate HTML report for single analysis"""
+        esc = html_mod.escape
         risk_color = {
             'critical': '#ff3366',
             'high': '#ffaa00',
@@ -5226,14 +5248,14 @@ Top Domains:
         <h1>Email Security Analysis Report</h1>
 
         <div class="section">
-            <p><strong>Email:</strong> {result.get('email', 'N/A')}</p>
+            <p><strong>Email:</strong> {esc(str(result.get('email', 'N/A')))}</p>
             <p><strong>Analysis Date:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
             <p><strong>Analysis Mode:</strong> {'ML-Enhanced' if self.config.enable_ml else 'Rule-Based'}</p>
         </div>
 
         <div class="risk-score">
             <div class="score-value">{result.get('risk_score', 0)}/100</div>
-            <div class="risk-level">Risk Level: {result.get('risk_level', 'unknown')}</div>
+            <div class="risk-level">Risk Level: {esc(str(result.get('risk_level', 'unknown')))}</div>
         </div>
 """
 
@@ -5246,9 +5268,9 @@ Top Domains:
             for threat in result['threats']:
                 html += f"""
             <div class="threat-item">
-                <strong>{threat.get('type', '').replace('_', ' ').title()}</strong><br>
-                {threat.get('description', 'No description available')}<br>
-                <small>Severity: {threat.get('severity', 'unknown').upper()}</small>
+                <strong>{esc(threat.get('type', '').replace('_', ' ').title())}</strong><br>
+                {esc(threat.get('description', 'No description available'))}<br>
+                <small>Severity: {esc(threat.get('severity', 'unknown').upper())}</small>
             </div>"""
 
             html += """
@@ -5272,7 +5294,7 @@ Top Domains:
                 This email appears in {breach_info['count']} known data breach(es)
             </p>
             <p style="color: #ff6b6b;">
-                <strong>Severity:</strong> {breach_severity.upper()}
+                <strong>Severity:</strong> {esc(breach_severity.upper())}
             </p>"""
 
             # Breach details
@@ -5284,26 +5306,26 @@ Top Domains:
                     if isinstance(breach, dict):
                         html += f"""
             <div class="threat-item" style="background: rgba(255,51,102,0.2); margin: 15px 0;">
-                <h4 style="color: #ff3366; margin: 0 0 10px 0;">{breach.get('title', breach.get('name', 'Unknown Breach'))}</h4>"""
+                <h4 style="color: #ff3366; margin: 0 0 10px 0;">{esc(str(breach.get('title', breach.get('name', 'Unknown Breach'))))}</h4>"""
 
                         if breach.get('domain'):
                             html += f"""
-                <p><strong>Domain/Origin:</strong> {breach['domain']}</p>"""
+                <p><strong>Domain/Origin:</strong> {esc(str(breach['domain']))}</p>"""
 
                         if breach.get('breach_date'):
                             html += f"""
-                <p><strong>Breach Date:</strong> {breach['breach_date']}</p>"""
+                <p><strong>Breach Date:</strong> {esc(str(breach['breach_date']))}</p>"""
 
                         if breach.get('description'):
                             html += f"""
-                <p><strong>Details:</strong> {breach['description']}</p>"""
+                <p><strong>Details:</strong> {esc(str(breach['description']))}</p>"""
 
                         if isinstance(breach.get('pwn_count'), (int, float)) and breach['pwn_count'] > 0:
                             html += f"""
                 <p><strong>Affected Accounts:</strong> {int(breach['pwn_count']):,}</p>"""
 
                         if breach.get('data_classes'):
-                            data_list = ', '.join(str(dc) for dc in breach['data_classes'][:10])
+                            data_list = ', '.join(esc(str(dc)) for dc in breach['data_classes'][:10])
                             html += f"""
                 <p><strong>Compromised Data Types:</strong> {data_list}</p>"""
 
@@ -5318,7 +5340,7 @@ Top Domains:
 
                 for i, step in enumerate(breach_info['mitigation_steps'], 1):
                     html += f"""
-                <p style="margin: 10px 0;"><strong>{i}.</strong> {step}</p>"""
+                <p style="margin: 10px 0;"><strong>{i}.</strong> {esc(str(step))}</p>"""
 
                 html += """
             </div>"""
@@ -5337,10 +5359,10 @@ Top Domains:
                     html += f"""
                 <div style="background: rgba(0,0,0,0.3); padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 3px solid {confidence_color};">
                     <div style="color: {confidence_color}; font-weight: bold; font-size: 15px;">
-                        {technique.get('id', 'N/A')}: {technique.get('name', 'Unknown')}
+                        {esc(str(technique.get('id', 'N/A')))}: {esc(str(technique.get('name', 'Unknown')))}
                     </div>
                     <div style="color: #b0b0b0; font-size: 13px; margin-top: 5px;">
-                        <strong>Tactic:</strong> {technique.get('tactic', 'Unknown')} |
+                        <strong>Tactic:</strong> {esc(str(technique.get('tactic', 'Unknown')))} |
                         <strong>Confidence:</strong> <span style="color: {confidence_color};">{similarity:.1f}%</span>
                     </div>
                 </div>"""
@@ -5368,16 +5390,16 @@ Top Domains:
                 html += f"""
             <div style="background: rgba(255,255,255,0.05); padding: 20px; margin: 15px 0; border-radius: 10px; border-left: 4px solid {confidence_color};">
                 <h4 style="color: #00d4ff; margin: 0 0 10px 0;">
-                    {technique.get('id', 'N/A')}: {technique.get('name', 'Unknown')}
+                    {esc(str(technique.get('id', 'N/A')))}: {esc(str(technique.get('name', 'Unknown')))}
                 </h4>
                 <p style="color: #b0b0b0; margin: 5px 0;">
-                    <strong>Tactic:</strong> {technique.get('tactic', 'Unknown')}
+                    <strong>Tactic:</strong> {esc(str(technique.get('tactic', 'Unknown')))}
                 </p>
                 <p style="color: #b0b0b0; margin: 5px 0;">
                     <strong>Confidence:</strong> <span style="color: {confidence_color};">{similarity:.1f}%</span>
                 </p>
                 <p style="color: #d0d0d0; margin: 10px 0 0 0; line-height: 1.6;">
-                    {technique.get('description', 'No description available')[:300]}...
+                    {esc(str(technique.get('description', 'No description available'))[:300])}...
                 </p>
             </div>"""
 
@@ -5418,7 +5440,7 @@ Top Domains:
             for rec in result['recommendations']:
                 html += f"""
             <div class="recommendation">
-                {rec}
+                {esc(str(rec))}
             </div>"""
 
             html += """
@@ -5443,7 +5465,7 @@ Top Domains:
                 color = '#ff3366' if score > 0.7 else '#ffaa00' if score > 0.5 else '#00ff88'
                 html += f"""
                 <tr>
-                    <td style="padding: 10px;">{model.replace('_', ' ').title()}</td>
+                    <td style="padding: 10px;">{esc(model.replace('_', ' ').title())}</td>
                     <td style="text-align: right; padding: 10px; color: {color};">{score:.1%}</td>
                 </tr>"""
 
@@ -6107,6 +6129,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
 
     def generate_full_html_report(self):
         """Generate comprehensive HTML report"""
+        esc = html_mod.escape
         stats = {
             'total': len(self.current_results),
             'critical': sum(1 for r in self.current_results if r.get('risk_level') == 'critical'),
@@ -6253,7 +6276,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
 
             html += f"""
                 <tr>
-                    <td>{r.get('email', 'N/A')}</td>
+                    <td>{esc(str(r.get('email', 'N/A')))}</td>
                     <td>{r.get('risk_score', 0)}</td>
                     <td class="{level}">{level.upper()}</td>
                     <td>{threats}</td>
@@ -6284,7 +6307,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
                 html += f"""
             <div style="background: rgba(255,255,255,0.05); padding: 25px; margin: 20px 0; border-radius: 10px; border-left: 4px solid {severity_color};">
                 <h3 style="color: {severity_color}; margin: 0 0 15px 0;">
-                    {email_result['email']}
+                    {esc(str(email_result['email']))}
                 </h3>
                 <p style="color: #b0b0b0; margin: 5px 0;">
                     <strong>Breach Count:</strong> {breach_info['count']} |
@@ -6301,16 +6324,16 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
                             html += f"""
                     <div style="background: rgba(0,0,0,0.3); padding: 15px; margin: 10px 0; border-radius: 8px;">
                         <div style="color: #ff3366; font-weight: bold; margin-bottom: 8px;">
-                            {breach.get('name', 'Unknown')}"""
+                            {esc(str(breach.get('name', 'Unknown')))}"""
                             if breach.get('breach_date'):
-                                html += f" ({breach['breach_date']})"
+                                html += f" ({esc(str(breach['breach_date']))})"
                             html += """
                         </div>"""
 
                             if breach.get('domain'):
                                 html += f"""
                         <div style="color: #b0b0b0; font-size: 13px; margin: 3px 0;">
-                            <strong>Domain:</strong> {breach['domain']}
+                            <strong>Domain:</strong> {esc(str(breach['domain']))}
                         </div>"""
 
                             if breach.get('description'):
@@ -6318,11 +6341,11 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
                                 desc = desc_value[:200] + "..." if len(desc_value) > 200 else desc_value
                                 html += f"""
                         <div style="color: #d0d0d0; font-size: 13px; margin: 3px 0; line-height: 1.4;">
-                            {desc}
+                            {esc(str(desc))}
                         </div>"""
 
                             if breach.get('data_classes'):
-                                data_text = ', '.join(str(dc) for dc in breach['data_classes'][:8])
+                                data_text = ', '.join(esc(str(dc)) for dc in breach['data_classes'][:8])
                                 html += f"""
                         <div style="color: #ffaa00; font-size: 13px; margin: 3px 0;">
                             <strong>Compromised Data:</strong> {data_text}
@@ -6342,7 +6365,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
 
                     for step in breach_info['mitigation_steps'][:5]:
                         html += f"""
-                        <li style="margin: 5px 0;">{step}</li>"""
+                        <li style="margin: 5px 0;">{esc(str(step))}</li>"""
 
                     html += """
                     </ol>
@@ -6362,10 +6385,10 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
                         html += f"""
                     <div style="background: rgba(0,0,0,0.2); padding: 10px; margin: 8px 0; border-radius: 6px; border-left: 3px solid {confidence_color};">
                         <div style="color: {confidence_color}; font-weight: bold; font-size: 13px;">
-                            {technique.get('id', 'N/A')}: {technique.get('name', 'Unknown')}
+                            {esc(str(technique.get('id', 'N/A')))}: {esc(str(technique.get('name', 'Unknown')))}
                         </div>
                         <div style="color: #b0b0b0; font-size: 12px; margin-top: 3px;">
-                            Tactic: {technique.get('tactic', 'Unknown')} | Confidence: {similarity:.1f}%
+                            Tactic: {esc(str(technique.get('tactic', 'Unknown')))} | Confidence: {similarity:.1f}%
                         </div>
                     </div>"""
 
