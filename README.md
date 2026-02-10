@@ -14,6 +14,8 @@ A professional desktop application for comprehensive email security analysis, br
 
 ## Features
 
+<img width="3020" height="7137" alt="NotebookLM Mind Map" src="https://github.com/user-attachments/assets/ba74fcb2-c2db-49e4-9037-7547bf0edecd" />
+
 ### Core Analysis
 - **Email Risk Scoring** - Multi-factor risk assessment (0-100) combining domain reputation, DNS validation, breach history, pattern analysis, and ML predictions
 - **Dark Web Breach Detection** - Parallel queries to LeakCheck.io, XposedOrNot, and EmailRep.io APIs with intelligent deduplication and caching
