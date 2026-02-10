@@ -31,6 +31,9 @@ A professional desktop application for comprehensive email security analysis, br
 - **Typosquatting Detection** - Levenshtein distance + homoglyph analysis against major providers
 
 ### Threat Intelligence
+
+<img width="1367" height="693" alt="image" src="https://github.com/user-attachments/assets/46e8760d-88a2-4ee3-b0e8-e67f5539bdc1" />
+
 - **MITRE ATT&CK Framework** - Maps detected threats to ATT&CK techniques with semantic search via sentence-transformers and FAISS
 - **TAXII 2.1 Integration** - Pulls latest ATT&CK data from MITRE TAXII server with GitHub and built-in fallbacks
 - **Real-time Monitoring** - Continuous email stream monitoring with live threat detection
@@ -42,6 +45,11 @@ A professional desktop application for comprehensive email security analysis, br
 - **Bulk Processing** - Concurrent analysis of email lists with aggregated statistics
 
 ### UI/UX
+
+<img width="1287" height="701" alt="image" src="https://github.com/user-attachments/assets/4eec8095-0220-4bb5-b0f8-2d9ace70e470" />
+
+<img width="1336" height="703" alt="image" src="https://github.com/user-attachments/assets/11757802-fe6f-41b3-90b5-5853baa9dc71" />
+
 - **Modern Dark Theme** - Glass-morphism effects, gradient buttons, particle animations
 - **13-Page Navigation** - Dashboard, Email Analysis, Bulk Scanner, Real-time Monitor, MITRE ATT&CK, Threat Intelligence, ML Models, DNS Security, Analytics, Export Reports, Audit Log, Settings, About
 - **Interactive Charts** - Matplotlib-powered analytics: risk distribution, threat heatmaps, MITRE top techniques, ML model performance, confidence distribution
@@ -50,6 +58,8 @@ A professional desktop application for comprehensive email security analysis, br
 ---
 
 ## Architecture
+
+<img width="1288" height="691" alt="image" src="https://github.com/user-attachments/assets/eff23453-0963-41aa-990e-64bb754902a8" />
 
 ```
 +------------------------------------------------------------------+
@@ -120,6 +130,8 @@ A professional desktop application for comprehensive email security analysis, br
 ```
 
 ### Data Flow
+
+<img width="1352" height="686" alt="image" src="https://github.com/user-attachments/assets/0d9659b6-7bff-4ec5-8748-21c261f8d079" />
 
 ```
 User Input (email address)
@@ -234,6 +246,8 @@ pip install customtkinter pandas numpy scikit-learn matplotlib requests dnspytho
 
 ## Usage
 
+<img width="1326" height="682" alt="image" src="https://github.com/user-attachments/assets/196fa9f1-2441-408c-bbbb-96aef23c7981" />
+
 ### Quick Start
 ```bash
 python main.py
@@ -267,6 +281,8 @@ cache_ttl = 3600           # Cache time-to-live in seconds
 
 ## Module Reference
 
+<img width="1346" height="727" alt="image" src="https://github.com/user-attachments/assets/a2dc4b06-ae5c-403c-990a-1f3fdb60c742" />
+
 | Module | Lines | Description |
 |--------|-------|-------------|
 | `EmailSecurityAnalyzerGUI.py` | 6,498 | Main GUI application (13 pages, charts, exports) |
@@ -291,6 +307,8 @@ cache_ttl = 3600           # Cache time-to-live in seconds
 ---
 
 ## API Integrations
+
+<img width="1321" height="702" alt="image" src="https://github.com/user-attachments/assets/63236a45-ad3f-4b2d-b819-335058e34c85" />
 
 | API | Purpose | Rate Limit | Auth Required |
 |-----|---------|------------|---------------|
