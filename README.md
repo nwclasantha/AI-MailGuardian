@@ -10,6 +10,8 @@ A professional desktop application for comprehensive email security analysis, br
 ![License](https://img.shields.io/badge/License-Private-red)
 ![Lines of Code](https://img.shields.io/badge/Lines-15%2C900%2B-green)
 
+https://github.com/user-attachments/assets/19de99ca-dd85-4488-bcb5-3c7cbf03b94e
+
 ---
 
 ## Features
