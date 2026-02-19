@@ -1,6 +1,7 @@
 import os
 import pickle
 import logging
+import threading
 import numpy as np
 
 # Prefer PyTorch-only transformer stack (avoid TensorFlow import side-effects)
@@ -15,13 +16,16 @@ try:
 except ImportError:
     TORCH_AVAILABLE = False
 
+# Library modules should not configure the root logger — main.py owns that
+logger = logging.getLogger(__name__)
+
 # Check for sentence-transformers
 try:
     from sentence_transformers import SentenceTransformer
     SENTENCE_TRANSFORMERS_AVAILABLE = True
 except ImportError:
     SENTENCE_TRANSFORMERS_AVAILABLE = False
-    print("Warning: sentence-transformers not available. Advanced MITRE mapping will be limited.")
+    logger.warning("sentence-transformers not available. Advanced MITRE mapping will be limited.")
 
 # Check for FAISS
 try:
@@ -29,7 +33,7 @@ try:
     FAISS_AVAILABLE = True
 except ImportError:
     FAISS_AVAILABLE = False
-    print("Warning: faiss not available. Will use fallback similarity search.")
+    logger.warning("faiss not available. Will use fallback similarity search.")
 
 # Check for STIX2
 try:
@@ -37,18 +41,7 @@ try:
     STIX2_AVAILABLE = True
 except ImportError:
     STIX2_AVAILABLE = False
-    print("Warning: stix2 not available. MITRE data handling will be limited.")
-
-# Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('email_analyzer_ultimate.log'),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+    logger.warning("stix2 not available. MITRE data handling will be limited.")
 
 # Import module dependencies
 from .ApplicationConfig import ApplicationConfig
@@ -60,6 +53,7 @@ class TechniqueRetriever:
         self.memory_store = memory_store
         self.config = config
         self.embedding_cache_file = config.mitre_cache_dir / "embeddings_cache.pkl"
+        self._index_lock = threading.Lock()
 
         if TORCH_AVAILABLE:
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -98,16 +92,18 @@ class TechniqueRetriever:
                 # Use STIX2 query
                 techniques = self.memory_store.query([Filter("type", "=", "attack-pattern")])
                 # Filter out deprecated techniques
-                active_techniques = [t for t in techniques if not t.get('x_mitre_deprecated', False)]
+                active_techniques = [t for t in techniques if not t.get('x_mitre_deprecated', False) and not t.get('revoked', False)]
             elif isinstance(self.memory_store, list):
                 # Raw JSON data
                 active_techniques = [
                     t for t in self.memory_store
-                    if t.get('type') == 'attack-pattern' and not t.get('x_mitre_deprecated', False)
+                    if t.get('type') == 'attack-pattern' and not t.get('x_mitre_deprecated', False) and not t.get('revoked', False)
                 ]
             elif isinstance(self.memory_store, dict):
-                # Built-in techniques
-                active_techniques = list(self.memory_store.values())
+                # Built-in techniques dict — should never reach TechniqueRetriever
+                # (MitreAttackFramework routes dict stores to load_builtin_framework)
+                logger.warning("TechniqueRetriever received built-in dict store — returning empty list")
+                active_techniques = []
             else:
                 active_techniques = []
 
@@ -130,9 +126,13 @@ class TechniqueRetriever:
                 with open(self.embedding_cache_file, 'rb') as f:
                     cached_data = pickle.load(f)
 
-                # Verify cache validity
+                # Verify cache validity: count match AND unit-vector normalization
                 if len(cached_data) == len(self.techniques):
-                    return cached_data
+                    sample_norms = np.linalg.norm(cached_data[:min(10, len(cached_data))], axis=1)
+                    if np.allclose(sample_norms, 1.0, atol=1e-4):
+                        return cached_data
+                    else:
+                        logger.warning("Cached embeddings are not L2-normalized. Recomputing.")
                 else:
                     logger.warning("Cache size mismatch. Recomputing embeddings.")
             except Exception as e:
@@ -177,11 +177,33 @@ class TechniqueRetriever:
         else:
             embeddings = np.array(embeddings).astype(np.float32)
 
-        # Save to cache
+        # L2-normalize so IndexFlatL2 distances map to cosine similarity:
+        # cosine_sim = 1.0 - squared_L2_distance / 2.0  (valid only for unit vectors)
+        norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+        norms[norms == 0] = 1.0  # avoid division by zero
+        embeddings = embeddings / norms
+
+        # Save to cache atomically (write tmp then rename to prevent corruption)
         try:
-            with open(self.embedding_cache_file, 'wb') as f:
-                pickle.dump(embeddings, f)
-            logger.info("Embeddings computed and cached.")
+            import tempfile
+            tmp_fd, tmp_path = tempfile.mkstemp(
+                dir=str(self.embedding_cache_file.parent), suffix='.tmp'
+            )
+            try:
+                with os.fdopen(tmp_fd, 'wb') as f:
+                    pickle.dump(embeddings, f)
+                # Atomic rename (on Windows, target must not exist)
+                if self.embedding_cache_file.exists():
+                    self.embedding_cache_file.unlink()
+                os.rename(tmp_path, str(self.embedding_cache_file))
+                logger.info("Embeddings computed and cached.")
+            except Exception:
+                # Clean up temp file on failure
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
+                raise
         except Exception as e:
             logger.warning(f"Could not save embedding cache: {e}")
 
@@ -200,20 +222,27 @@ class TechniqueRetriever:
             if len(self.embeddings) > 1000:
                 # For larger datasets, use IVF index
                 nlist = max(2, min(int(np.sqrt(len(self.embeddings))), len(self.embeddings) // 39))
-                index = faiss.IndexIVFFlat(
-                    faiss.IndexFlatL2(dimension),
-                    dimension,
-                    nlist
-                )
-                index.train(self.embeddings)
-                if not index.is_trained:
+                try:
+                    # Keep quantizer as a named variable — FAISS holds a raw C++ pointer
+                    # to it; if Python GC's the temporary, use-after-free / segfault occurs
+                    quantizer = faiss.IndexFlatL2(dimension)
+                    index = faiss.IndexIVFFlat(
+                        quantizer,
+                        dimension,
+                        nlist
+                    )
+                    index.train(self.embeddings)
+                    index.add(self.embeddings)
+                    index.nprobe = min(5, nlist)  # Probe multiple clusters for accuracy
+                    self._quantizer = quantizer  # prevent GC for lifetime of index
+                except Exception:
                     logger.warning("FAISS IVF training failed, falling back to flat index")
                     index = faiss.IndexFlatL2(dimension)
+                    index.add(self.embeddings)
             else:
                 # For smaller datasets, use simple flat index
                 index = faiss.IndexFlatL2(dimension)
-
-            index.add(self.embeddings)
+                index.add(self.embeddings)
             logger.info(f"Faiss index built successfully with {index.ntotal} vectors.")
         else:
             # Fallback to numpy-based search

@@ -10,10 +10,10 @@ except ImportError:
     print("Error: customtkinter is required. Install with: pip install customtkinter")
     sys.exit(1)
 
-# Color scheme (only the colors used by GradientButton)
+# Color scheme (only the colors used by GradientButton) — Modern Dark Pro
 COLORS = {
-    'accent_primary': '#00d4ff',
-    'accent_secondary': '#00ff88',
+    'accent_primary': '#4f8ff7',
+    'accent_secondary': '#3fb950',
 }
 
 class GradientButton(ctk.CTkButton):
@@ -26,6 +26,12 @@ class GradientButton(ctk.CTkButton):
         self.bind("<Leave>", self.on_leave)
         self.animation_id = None
 
+    def destroy(self):
+        if self.animation_id:
+            self.after_cancel(self.animation_id)
+            self.animation_id = None
+        super().destroy()
+
     def _is_disabled(self):
         """Check if button is currently disabled"""
         try:
@@ -36,6 +42,9 @@ class GradientButton(ctk.CTkButton):
     def on_hover(self, event):
         if self._is_disabled():
             return
+        if self.animation_id:
+            self.after_cancel(self.animation_id)
+            self.animation_id = None
         self.animate_gradient()
 
     def on_leave(self, event):
@@ -66,6 +75,7 @@ class GradientButton(ctk.CTkButton):
 
             self.animation_id = self.after(50, lambda: self.animate_gradient(step + 1))
         except Exception:
+            self.animation_id = None
             if self.winfo_exists() and hasattr(self, 'gradient_colors') and self.gradient_colors:
                 try:
                     self.configure(fg_color=self.gradient_colors[0])

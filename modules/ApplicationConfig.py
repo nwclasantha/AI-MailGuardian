@@ -9,15 +9,7 @@ import configparser
 
 warnings.filterwarnings('ignore')
 
-# Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('email_analyzer_ultimate.log'),
-        logging.StreamHandler()
-    ]
-)
+# Library modules should not configure the root logger — main.py owns that
 logger = logging.getLogger(__name__)
 
 # Python 3.13 compatibility check
@@ -70,6 +62,15 @@ class ApplicationConfig:
     enable_threat_feeds: bool = True
     enable_animations: bool = True
     enable_semantic_mitre: bool = SENTENCE_TRANSFORMERS_AVAILABLE  # New: Semantic MITRE mapping
+    enable_dnsbl: bool = True
+    enable_bimi: bool = True
+    enable_mta_sts: bool = True
+    enable_tls_rpt: bool = True
+    enable_cert_transparency: bool = True
+    enable_dga_detection: bool = True
+    enable_gravatar_check: bool = True
+    enable_threatfox: bool = True
+    enable_parked_detection: bool = True
     ssl_verify: bool = True
     force_enable_ml: bool = False
 
@@ -122,7 +123,7 @@ class ApplicationConfig:
 
         # Attempt to load overrides from config.ini at project root
         try:
-            project_root = Path.cwd()
+            project_root = Path(__file__).parent.parent
             ini_path = project_root / "config.ini"
             if ini_path.exists():
                 parser = configparser.ConfigParser()
@@ -130,8 +131,18 @@ class ApplicationConfig:
 
                 # [general]
                 general = parser["general"] if parser.has_section("general") else {}
-                self.max_workers = int(general.get("max_workers", self.max_workers))
-                self.batch_size = int(general.get("batch_size", self.batch_size))
+                try:
+                    max_w = int(general.get("max_workers", self.max_workers))
+                    if max_w > 0:
+                        self.max_workers = max_w
+                except (ValueError, TypeError):
+                    logger.warning("config.ini [general] max_workers is not a valid integer — using default")
+                try:
+                    batch_s = int(general.get("batch_size", self.batch_size))
+                    if batch_s > 0:
+                        self.batch_size = batch_s
+                except (ValueError, TypeError):
+                    logger.warning("config.ini [general] batch_size is not a valid integer — using default")
 
                 # Optional directory overrides (absolute or relative)
                 log_dir_value = general.get("log_dir") if general else None
@@ -150,7 +161,11 @@ class ApplicationConfig:
                 # [database]
                 if parser.has_section("database"):
                     db = parser["database"]
-                    self.timeout = int(db.get("timeout", self.timeout))
+                    try:
+                        cfg_timeout = int(db.get("timeout", self.timeout))
+                        self.timeout = cfg_timeout if cfg_timeout > 0 else self.timeout
+                    except (ValueError, TypeError):
+                        logger.warning("config.ini [database] timeout is not a valid integer — using default")
 
                 # [ml]
                 if parser.has_section("ml"):

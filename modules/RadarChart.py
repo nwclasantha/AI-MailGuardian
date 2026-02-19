@@ -21,11 +21,11 @@ class RadarChart(ctk.CTkFrame):
         super().__init__(parent, **kwargs)
         self.categories = categories
         self.values = [0] * len(categories)
-        self.configure(fg_color='#1a1a1a')
+        self.configure(fg_color='#161b22')
 
-        self.fig = Figure(figsize=(6, 6), facecolor='#1a1a1a')
+        self.fig = Figure(figsize=(6, 6), facecolor='#161b22')
         self.ax = self.fig.add_subplot(111, projection='polar')
-        self.ax.set_facecolor('#1a1a1a')
+        self.ax.set_facecolor('#161b22')
 
         self.canvas = FigureCanvasTkAgg(self.fig, self)
         self.canvas.get_tk_widget().pack(fill="both", expand=True)
@@ -43,29 +43,44 @@ class RadarChart(ctk.CTkFrame):
         self.update_chart()
 
     def update_chart(self):
-        self.ax.clear()
+        try:
+            if not self.winfo_exists():
+                return
 
-        if not self.categories or not self.values:
-            self.ax.text(0.5, 0.5, 'No data', transform=self.ax.transAxes,
-                        ha='center', va='center', color='#ffffff')
+            self.ax.clear()
+
+            if not self.categories or not any(self.values):
+                self.ax.text(0.5, 0.5, 'No data', transform=self.ax.transAxes,
+                            ha='center', va='center', color='#8b949e')
+                self.canvas.draw()
+                return
+
+            angles = np.linspace(0, 2 * np.pi, len(self.categories), endpoint=False).tolist()
+            values = self.values + [self.values[0]]
+            angles += angles[:1]
+
+            self.ax.plot(angles, values, color='#4f8ff7', linewidth=2)
+            self.ax.fill(angles, values, color='#4f8ff7', alpha=0.15)
+
+            self.ax.set_ylim(0, 100)
+            self.ax.set_theta_offset(np.pi / 2)
+            self.ax.set_theta_direction(-1)
+
+            self.ax.set_xticks(angles[:-1])
+            self.ax.set_xticklabels(self.categories, color='#e6edf3')
+            self.ax.set_yticklabels([])
+
+            self.ax.grid(True, color='#30363d', linestyle='--', alpha=0.5)
+
             self.canvas.draw()
-            return
+        except Exception:
+            pass  # Widget destroyed or matplotlib error
 
-        angles = np.linspace(0, 2 * np.pi, len(self.categories), endpoint=False).tolist()
-        values = self.values + [self.values[0]]
-        angles += angles[:1]
-
-        self.ax.plot(angles, values, color='#00d4ff', linewidth=2)
-        self.ax.fill(angles, values, color='#00d4ff', alpha=0.25)
-
-        self.ax.set_ylim(0, 100)
-        self.ax.set_theta_offset(np.pi / 2)
-        self.ax.set_theta_direction(-1)
-
-        self.ax.set_xticks(angles[:-1])
-        self.ax.set_xticklabels(self.categories, color='#ffffff')
-        self.ax.set_yticklabels([])
-
-        self.ax.grid(True, color='#252525', linestyle='--', alpha=0.5)
-
-        self.canvas.draw()
+    def destroy(self):
+        """Close matplotlib figure to prevent memory leak."""
+        try:
+            import matplotlib.pyplot as plt
+            plt.close(self.fig)
+        except Exception:
+            pass
+        super().destroy()

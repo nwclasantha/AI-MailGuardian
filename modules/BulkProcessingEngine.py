@@ -10,15 +10,7 @@ import numpy as np
 
 warnings.filterwarnings('ignore')
 
-# Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('email_analyzer_ultimate.log'),
-        logging.StreamHandler()
-    ]
-)
+# Library modules should not configure the root logger — main.py owns that
 logger = logging.getLogger(__name__)
 
 # Import module dependencies
@@ -50,7 +42,8 @@ class BulkProcessingEngine:
 
         # Submit individual emails for per-email progress updates
         completed = 0
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        executor = ThreadPoolExecutor(max_workers=max_workers)
+        try:
             futures = {}
             for email in emails:
                 if self.cancel_flag.is_set():
@@ -60,6 +53,9 @@ class BulkProcessingEngine:
 
             for future in as_completed(futures):
                 if self.cancel_flag.is_set():
+                    # Cancel remaining pending futures so shutdown doesn't block
+                    for f in futures:
+                        f.cancel()
                     break
 
                 try:
@@ -80,6 +76,9 @@ class BulkProcessingEngine:
 
                 if progress_callback:
                     progress_callback(completed, total)
+        finally:
+            # Use wait=False + cancel_futures=True to avoid hanging on cancel
+            executor.shutdown(wait=False, cancel_futures=True)
 
         # Calculate statistics
         self.calculate_statistics()
@@ -140,7 +139,7 @@ class BulkProcessingEngine:
             'minimal': sum(1 for r in valid_results if r.get('risk_level') == 'minimal'),
             'avg_risk': np.mean([r.get('risk_score', 0) for r in valid_results]) if valid_results else 0,
             'with_threats': sum(1 for r in valid_results if r.get('threats')),
-            'with_breaches': sum(1 for r in valid_results if r.get('breach_info', {}).get('found')),
+            'with_breaches': sum(1 for r in valid_results if (r.get('breach_info') or {}).get('found')),
             'domain_stats': self.calculate_domain_statistics(valid_results),
             'threat_distribution': self.calculate_threat_distribution(valid_results)
         }
@@ -167,7 +166,7 @@ class BulkProcessingEngine:
         """Calculate threat distribution"""
         all_threats = []
         for r in results:
-            all_threats.extend([t['type'] for t in r.get('threats', [])])
+            all_threats.extend([t.get('type', 'unknown') for t in (r.get('threats') or [])])
 
         return Counter(all_threats)
 

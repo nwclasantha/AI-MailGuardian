@@ -74,7 +74,11 @@ class EnterpriseExcelReportGenerator:
                 logger.info("Creating Data Exposure Summary sheet...")
                 self._create_data_exposure_sheet(writer, results)
 
-                # Sheet 12: ML Prediction Statistics
+                # Sheet 12: Advanced Security Checks
+                logger.info("Creating Advanced Security Checks sheet...")
+                self._create_advanced_security_sheet(writer, results)
+
+                # Sheet 13: ML Prediction Statistics
                 logger.info("Creating ML Prediction Statistics sheet...")
                 self._create_ml_metrics_sheet(writer)
 
@@ -206,7 +210,9 @@ class EnterpriseExcelReportGenerator:
         }
 
         df_rec = pd.DataFrame(recommendations_data)
-        df_rec.to_excel(writer, sheet_name='Executive Dashboard', index=False, startrow=20)
+        # Place recommendations below dashboard data (dynamic row count + gap)
+        rec_startrow = len(dashboard_data['Metric']) + 3
+        df_rec.to_excel(writer, sheet_name='Executive Dashboard', index=False, startrow=rec_startrow)
 
     def _create_risk_analysis_sheet(self, writer, results: List[Dict], stats: Dict):
         """Create risk analysis sheet with detailed breakdown"""
@@ -259,10 +265,10 @@ class EnterpriseExcelReportGenerator:
         breach_data = []
 
         for result in results:
-            breach_info = result.get('breach_info', {})
+            breach_info = result.get('breach_info') or {}
             if breach_info.get('found'):
                 # Build details list with fallback from breach names
-                details_list = breach_info.get('details', [])
+                details_list = breach_info.get('details') or []
                 if not isinstance(details_list, list):
                     details_list = []
                 # Fallback: if details empty but breach names available, build minimal entries
@@ -302,7 +308,7 @@ class EnterpriseExcelReportGenerator:
                             'Breach Date': breach.get('breach_date', 'Unknown'),
                             'Domain': breach.get('domain', 'N/A'),
                             'Affected Accounts': breach.get('pwn_count', 'N/A'),
-                            'Compromised Data': ', '.join((breach.get('data_classes') or [])[:10]),
+                            'Compromised Data': ', '.join(str(dc) for dc in (breach.get('data_classes') or [])[:10]),
                             'Severity': (breach_info.get('severity') or 'N/A').upper(),
                             'Verified': 'Yes' if breach.get('is_verified') else 'No',
                             'MITRE Techniques': top_mitre,
@@ -333,7 +339,7 @@ class EnterpriseExcelReportGenerator:
             breach_info = result.get('breach_info') or {}
             dns = result.get('dns_security') or {}
             ml_preds = result.get('ml_predictions') or {}
-            threats = result.get('threats', [])
+            threats = result.get('threats') or []
             typosquat_info = result.get('typosquat_info') or {}
             dom_rep = result.get('domain_reputation') or {}
 
@@ -422,7 +428,7 @@ class EnterpriseExcelReportGenerator:
         mitigation_data = []
 
         for result in results:
-            breach_info = result.get('breach_info', {})
+            breach_info = result.get('breach_info') or {}
             if breach_info.get('found') and breach_info.get('mitigation_steps'):
                 for i, step in enumerate(breach_info['mitigation_steps'], 1):
                     mitigation_data.append({
@@ -456,18 +462,21 @@ class EnterpriseExcelReportGenerator:
         dns_data = []
 
         for result in results:
-            dns = result.get('dns_security', {})
+            dns = result.get('dns_security') or {}
             if dns:
                 dns_data.append({
                     'Domain': result.get('email', 'N/A').split('@')[1] if '@' in result.get('email', '') else 'N/A',
                     'Email': result.get('email', 'N/A'),
                     'DNS Score': dns.get('score', 0),
-                    'SPF Record': 'Configured ✅' if dns.get('spf') else 'Missing ❌',
-                    'DMARC Policy': 'Configured ✅' if dns.get('dmarc') else 'Missing ❌',
-                    'DKIM': 'Configured ✅' if dns.get('dkim') else 'Missing ❌',
-                    'DNSSEC': 'Enabled ✅' if dns.get('dnssec') else 'Disabled ❌',
-                    'MX Records': 'Found ✅' if dns.get('mx') else 'Missing ❌',
-                    'Issues': ', '.join(dns.get('issues', [])) if dns.get('issues') else 'None'
+                    'SPF Record': 'Configured' if dns.get('spf') else 'Missing',
+                    'DMARC Policy': 'Configured' if dns.get('dmarc') else 'Missing',
+                    'DKIM': 'Configured' if dns.get('dkim') else 'Missing',
+                    'DNSSEC': 'Enabled' if dns.get('dnssec') else 'Disabled',
+                    'MX Records': 'Found' if dns.get('mx') else 'Missing',
+                    'BIMI': 'Yes' if dns.get('bimi') else 'No',
+                    'MTA-STS': 'Yes' if dns.get('mta_sts') else 'No',
+                    'TLS-RPT': 'Yes' if dns.get('tls_rpt') else 'No',
+                    'Issues': ', '.join(str(i) for i in dns.get('issues', [])) if dns.get('issues') else 'None'
                 })
 
         if dns_data:
@@ -494,7 +503,7 @@ class EnterpriseExcelReportGenerator:
 
         for result in results:
             email = result.get('email', 'N/A')
-            for threat in result.get('threats', []):
+            for threat in (result.get('threats') or []):
                 threat_data.append({
                     'Email': email,
                     'Threat Type': threat.get('type', 'unknown').replace('_', ' ').title(),
@@ -529,7 +538,7 @@ class EnterpriseExcelReportGenerator:
 
         for result in results:
             email = result.get('email', 'N/A')
-            threats = result.get('threats', [])
+            threats = result.get('threats') or []
             typosquat_info = result.get('typosquat_info') or {}
 
             # Check for disposable
@@ -606,6 +615,50 @@ class EnterpriseExcelReportGenerator:
             }])
             empty_data.to_excel(writer, sheet_name='Vulnerability Assessment', index=False)
 
+    def _create_advanced_security_sheet(self, writer, results: List[Dict]):
+        """Create advanced security checks sheet (DNSBL, CT, DGA, ThreatFox, Gravatar, Parked)"""
+        import pandas as pd
+
+        adv_data = []
+        for result in results:
+            email = result.get('email', 'N/A')
+            domain = email.split('@')[1] if '@' in email else 'N/A'
+            dnsbl = result.get('dnsbl') or {}
+            ct = result.get('cert_transparency') or {}
+            dga = result.get('dga_analysis') or {}
+            tfox = result.get('threatfox') or {}
+            grav = result.get('gravatar') or {}
+            park = result.get('parked_domain') or {}
+
+            adv_data.append({
+                'Email': email,
+                'Domain': domain,
+                'DNSBL Status': f'Listed ({dnsbl.get("listed_count", 0)})' if dnsbl.get('listed') else 'Clean',
+                'DNSBL IPs Checked': ', '.join(str(ip) for ip in dnsbl.get('checked_ips', [])) if dnsbl.get('checked_ips') else 'N/A',
+                'ThreatFox IOCs': tfox.get('ioc_count', 0) if tfox.get('found') else 0,
+                'ThreatFox Status': 'IOC Found' if tfox.get('found') else 'Clean',
+                'DGA Score': round(float(dga.get('dga_score') or 0.0), 3),
+                'DGA Detected': 'Yes' if dga.get('is_dga') else 'No',
+                'Cert Count': ct.get('cert_count', 0) if ct.get('found') else 0,
+                'Cert First Seen': ct.get('first_seen', 'N/A') or 'N/A',
+                'Cert Last Seen': ct.get('last_seen', 'N/A') or 'N/A',
+                'Gravatar Profile': 'Yes' if grav.get('has_profile') else 'No',
+                'Parked Domain': 'Yes' if park.get('is_parked') else 'No',
+                'Parking Indicators': ', '.join(str(i) for i in park.get('indicators', [])[:3]) if park.get('indicators') else 'None',
+            })
+
+        if adv_data:
+            df = pd.DataFrame(adv_data)
+            df.to_excel(writer, sheet_name='Advanced Security', index=False)
+        else:
+            empty_data = pd.DataFrame([{
+                'Email': 'No advanced security data',
+                'DNSBL Status': '-',
+                'ThreatFox Status': '-',
+                'DGA Detected': '-',
+            }])
+            empty_data.to_excel(writer, sheet_name='Advanced Security', index=False)
+
     def _create_data_exposure_sheet(self, writer, results: List[Dict]):
         """Create data exposure summary sheet"""
         import pandas as pd
@@ -621,7 +674,7 @@ class EnterpriseExcelReportGenerator:
             breach_info = result.get('breach_info') or {}
 
             if breach_info.get('found'):
-                for breach in breach_info.get('details', []):
+                for breach in (breach_info.get('details') or []):
                     if isinstance(breach, dict):
                         data_classes = breach.get('data_classes') or []
                         for dc in data_classes:
@@ -633,7 +686,7 @@ class EnterpriseExcelReportGenerator:
                             'Breach Date': breach.get('breach_date', 'Unknown'),
                             'Affected Email': email,
                             'Affected Accounts': breach.get('pwn_count', 'N/A'),
-                            'Data Types Exposed': ', '.join((breach.get('data_classes') or [])[:8]),
+                            'Data Types Exposed': ', '.join(str(dc) for dc in (breach.get('data_classes') or [])[:8]),
                             'Domain': breach.get('domain', 'N/A')
                         })
 
@@ -729,7 +782,7 @@ class EnterpriseExcelReportGenerator:
                 predictions_for_model = [p for p in ml_engine.prediction_history
                                         if model_name in p.get('predictions', {})]
                 if predictions_for_model:
-                    avg_confidence = sum(p['predictions'].get(model_name, 0)
+                    avg_confidence = sum((p['predictions'].get(model_name) or 0)
                                         for p in predictions_for_model) / len(predictions_for_model)
                     stats_data.append({
                         'Metric': f'{model_name.replace("_", " ").title()} - Avg Confidence',
@@ -1076,7 +1129,7 @@ class EnterpriseExcelReportGenerator:
                               if (r.get('typosquat_info') or {}).get('is_typosquat'))
         password_breach_count = sum(1 for r in results
                                     if (r.get('password_breach') or {}).get('found'))
-        vulnerability_count = sum(len(r.get('vulnerabilities', [])) for r in results)
+        vulnerability_count = sum(len(r.get('vulnerabilities') or []) for r in results)
 
         return {
             'total': total,

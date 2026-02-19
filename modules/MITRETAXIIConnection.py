@@ -9,24 +9,16 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+# Library modules should not configure the root logger — main.py owns that
+logger = logging.getLogger(__name__)
+
 # Check for STIX2 support (optional)
 try:
     from stix2 import MemoryStore
     STIX2_AVAILABLE = True
 except ImportError:
     STIX2_AVAILABLE = False
-    print("Warning: stix2 not available. MITRE data handling will be limited.")
-
-# Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('email_analyzer_ultimate.log'),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+    logger.warning("stix2 not available. MITRE data handling will be limited.")
 
 # Import module dependencies
 from .ApplicationConfig import ApplicationConfig
@@ -199,11 +191,32 @@ class MITRETAXIIConnection:
 
             new_objects = response.json().get("objects", [])
 
-            if new_objects:
-                with open(self.cache_file, 'r', encoding='utf-8') as f:
-                    existing_data = json.load(f)
+            # Handle STIX Bundle dict format (mirrors existing_data guard below)
+            if isinstance(new_objects, dict) and 'objects' in new_objects:
+                new_objects = new_objects['objects']
 
+            if new_objects:
+                try:
+                    with open(self.cache_file, 'r', encoding='utf-8') as f:
+                        existing_data = json.load(f)
+                except (FileNotFoundError, json.JSONDecodeError):
+                    existing_data = []  # Start fresh if cache is missing or corrupt
+
+                # Handle both list and STIX Bundle dict formats
+                if isinstance(existing_data, dict) and 'objects' in existing_data:
+                    existing_data = existing_data['objects']
                 existing_data.extend(new_objects)
+
+                # Deduplicate by STIX ID, keeping the newest version
+                seen = {}
+                for obj in existing_data:
+                    obj_id = obj.get('id', '')
+                    if not obj_id:
+                        continue
+                    existing_mod = seen.get(obj_id, {}).get('modified', '')
+                    if obj.get('modified', '') >= existing_mod:
+                        seen[obj_id] = obj
+                existing_data = list(seen.values())
 
                 with open(self.cache_file, 'w', encoding='utf-8') as f:
                     json.dump(existing_data, f)

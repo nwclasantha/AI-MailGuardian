@@ -24,6 +24,12 @@ class EnterpriseReportGenerator:
         """Escape HTML special characters in user-supplied values"""
         return html_mod.escape(str(value)) if value else ''
 
+    @staticmethod
+    def _safe_json(value) -> str:
+        """Serialize to JSON safe for embedding inside HTML <script> tags.
+        json.dumps does not escape </script>, which terminates the script block."""
+        return json.dumps(value).replace('</', '<\\/')
+
     def generate_executive_html_report(self, results: List[Dict], report_title: str = "Email Security Analysis") -> str:
         """Generate stunning enterprise HTML report with executive summary"""
 
@@ -48,7 +54,7 @@ class EnterpriseReportGenerator:
 
         body {{
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #7c6bf5 0%, #a78bfa 100%);
             color: #1a1a1a;
             line-height: 1.6;
             padding: 0;
@@ -187,23 +193,23 @@ class EnterpriseReportGenerator:
         }}
 
         .kpi-card.critical {{
-            --card-color-start: #ff3366;
-            --card-color-end: #ff6b99;
+            --card-color-start: #f85149;
+            --card-color-end: #ff7b72;
         }}
 
         .kpi-card.warning {{
-            --card-color-start: #ffaa00;
-            --card-color-end: #ffc947;
+            --card-color-start: #d29922;
+            --card-color-end: #e3b341;
         }}
 
         .kpi-card.success {{
-            --card-color-start: #00d4aa;
+            --card-color-start: #3fb950;
             --card-color-end: #00ffb8;
         }}
 
         .kpi-card.info {{
-            --card-color-start: #4466ff;
-            --card-color-end: #667eea;
+            --card-color-start: #58a6ff;
+            --card-color-end: #7c6bf5;
         }}
 
         .kpi-label {{
@@ -245,12 +251,12 @@ class EnterpriseReportGenerator:
 
         .trend-up {{
             background: rgba(255, 51, 102, 0.1);
-            color: #ff3366;
+            color: #f85149;
         }}
 
         .trend-down {{
             background: rgba(0, 212, 170, 0.1);
-            color: #00d4aa;
+            color: #3fb950;
         }}
 
         /* Content Sections */
@@ -300,10 +306,10 @@ class EnterpriseReportGenerator:
             color: white;
         }}
 
-        .risk-color.critical {{ background: linear-gradient(135deg, #ff3366, #ff6b99); }}
-        .risk-color.high {{ background: linear-gradient(135deg, #ffaa00, #ffc947); }}
-        .risk-color.medium {{ background: linear-gradient(135deg, #ff8800, #ffaa47); }}
-        .risk-color.low {{ background: linear-gradient(135deg, #00d4aa, #00ffb8); }}
+        .risk-color.critical {{ background: linear-gradient(135deg, #f85149, #ff7b72); }}
+        .risk-color.high {{ background: linear-gradient(135deg, #d29922, #e3b341); }}
+        .risk-color.medium {{ background: linear-gradient(135deg, #d29922, #e3b341); }}
+        .risk-color.low {{ background: linear-gradient(135deg, #3fb950, #00ffb8); }}
 
         .risk-info {{
             flex: 1;
@@ -383,22 +389,22 @@ class EnterpriseReportGenerator:
 
         .badge-critical {{
             background: rgba(255, 51, 102, 0.15);
-            color: #ff3366;
+            color: #f85149;
         }}
 
         .badge-high {{
             background: rgba(255, 170, 0, 0.15);
-            color: #ffaa00;
+            color: #d29922;
         }}
 
         .badge-medium {{
             background: rgba(255, 136, 0, 0.15);
-            color: #ff8800;
+            color: #d29922;
         }}
 
         .badge-low {{
             background: rgba(0, 212, 170, 0.15);
-            color: #00d4aa;
+            color: #3fb950;
         }}
 
         .score-badge {{
@@ -415,7 +421,7 @@ class EnterpriseReportGenerator:
 
         /* Recommendations */
         .recommendations {{
-            background: linear-gradient(135deg, #00d4aa 0%, #00ffb8 100%);
+            background: linear-gradient(135deg, #3fb950 0%, #00ffb8 100%);
             color: white;
             border-radius: 20px;
             padding: 40px;
@@ -589,6 +595,9 @@ class EnterpriseReportGenerator:
         # Add domain intelligence & vulnerability assessment
         html += self._generate_domain_intelligence_section(results)
 
+        # Add advanced security checks section
+        html += self._generate_advanced_security_section(results)
+
         # Add data exposure summary & password breach alerts
         html += self._generate_data_exposure_section(results)
 
@@ -625,7 +634,7 @@ class EnterpriseReportGenerator:
         high = sum(1 for r in results if r.get('risk_level') == 'high')
         medium = sum(1 for r in results if r.get('risk_level') == 'medium')
         low = sum(1 for r in results if r.get('risk_level') in ['low', 'minimal'])
-        breached = sum(1 for r in results if r.get('breach_info', {}).get('found'))
+        breached = sum(1 for r in results if (r.get('breach_info') or {}).get('found'))
 
         total_risk = sum(r.get('risk_score', 0) for r in results)
         avg_risk = int(total_risk / total) if total > 0 else 0
@@ -701,19 +710,19 @@ class EnterpriseReportGenerator:
                     <div style="line-height: 2;">
                         <div style="margin-bottom: 15px;">
                             <strong style="color: #1e3c72;">🎯 Overall Risk Level:</strong>
-                            <span style="color: {'#ff3366' if stats['avg_risk'] > 60 else '#ffaa00' if stats['avg_risk'] > 40 else '#00d4aa'}; font-weight: 700;">{stats['avg_risk']}/100</span>
+                            <span style="color: {'#f85149' if stats['avg_risk'] > 60 else '#d29922' if stats['avg_risk'] > 40 else '#3fb950'}; font-weight: 700;">{stats['avg_risk']}/100</span>
                         </div>
                         <div style="margin-bottom: 15px;">
                             <strong style="color: #1e3c72;">🚨 Total Breached:</strong>
-                            <span style="color: #ff3366; font-weight: 700;">{stats['breached']} ({stats['breach_percentage']:.1f}%)</span>
+                            <span style="color: #f85149; font-weight: 700;">{stats['breached']} ({stats['breach_percentage']:.1f}%)</span>
                         </div>
                         <div style="margin-bottom: 15px;">
                             <strong style="color: #1e3c72;">⚡ Action Required:</strong>
-                            <span style="color: #ff3366; font-weight: 700;">{stats['critical'] + stats['high']} emails</span>
+                            <span style="color: #f85149; font-weight: 700;">{stats['critical'] + stats['high']} emails</span>
                         </div>
                         <div style="margin-bottom: 15px;">
                             <strong style="color: #1e3c72;">✅ Secure Status:</strong>
-                            <span style="color: #00d4aa; font-weight: 700;">{stats['low']} emails</span>
+                            <span style="color: #3fb950; font-weight: 700;">{stats['low']} emails</span>
                         </div>
                     </div>
                 </div>
@@ -730,10 +739,10 @@ class EnterpriseReportGenerator:
         # 1. Top Threat Types
         all_threats = []
         for r in results:
-            all_threats.extend([t.get('type', 'unknown') for t in r.get('threats', [])])
+            all_threats.extend([t.get('type', 'unknown') for t in (r.get('threats') or [])])
         threat_counts = Counter(all_threats).most_common(10)
-        threat_labels = json.dumps([t[0] for t in threat_counts]) if threat_counts else json.dumps([])
-        threat_values = json.dumps([t[1] for t in threat_counts]) if threat_counts else json.dumps([])
+        threat_labels = self._safe_json([t[0] for t in threat_counts]) if threat_counts else self._safe_json([])
+        threat_values = self._safe_json([t[1] for t in threat_counts]) if threat_counts else self._safe_json([])
 
         # 2. Breach Statistics by Domain
         domain_breaches = {}
@@ -744,16 +753,16 @@ class EnterpriseReportGenerator:
                 if domain not in domain_breaches:
                     domain_breaches[domain] = {'total': 0, 'breached': 0}
                 domain_breaches[domain]['total'] += 1
-                if r.get('breach_info', {}).get('found'):
+                if (r.get('breach_info') or {}).get('found'):
                     domain_breaches[domain]['breached'] += 1
 
         breach_domains = sorted(domain_breaches.items(), key=lambda x: x[1]['breached'], reverse=True)[:10]
-        breach_domain_labels = json.dumps([d[0] for d in breach_domains]) if breach_domains else json.dumps([])
-        breach_domain_values = json.dumps([d[1]['breached'] for d in breach_domains]) if breach_domains else json.dumps([])
+        breach_domain_labels = self._safe_json([d[0] for d in breach_domains]) if breach_domains else self._safe_json([])
+        breach_domain_values = self._safe_json([d[1]['breached'] for d in breach_domains]) if breach_domains else self._safe_json([])
 
         # 3. Risk Score Distribution (histogram)
-        score_ranges = json.dumps(['0-20', '21-40', '41-60', '61-80', '81-100'])
-        score_counts = json.dumps([
+        score_ranges = self._safe_json(['0-20', '21-40', '41-60', '61-80', '81-100'])
+        score_counts = self._safe_json([
             sum(1 for r in results if 0 <= r.get('risk_score', 0) <= 20),
             sum(1 for r in results if 21 <= r.get('risk_score', 0) <= 40),
             sum(1 for r in results if 41 <= r.get('risk_score', 0) <= 60),
@@ -761,14 +770,15 @@ class EnterpriseReportGenerator:
             sum(1 for r in results if 81 <= r.get('risk_score', 0) <= 100)
         ])
 
-        # 4. Top MITRE ATT&CK Techniques
+        # 4. Top MITRE ATT&CK Techniques (show ID: Name for readability)
         mitre_techniques = []
         for r in results:
-            for tech in r.get('mitre_details', [])[:3]:
-                mitre_techniques.append(tech.get('id', 'Unknown'))
+            for tech in (r.get('mitre_details') or [])[:5]:
+                label = f"{tech.get('id', '?')}: {tech.get('name', 'Unknown')}"
+                mitre_techniques.append(label)
         mitre_counts = Counter(mitre_techniques).most_common(10)
-        mitre_labels = json.dumps([t[0] for t in mitre_counts]) if mitre_counts else json.dumps([])
-        mitre_values = json.dumps([t[1] for t in mitre_counts]) if mitre_counts else json.dumps([])
+        mitre_labels = self._safe_json([t[0] for t in mitre_counts]) if mitre_counts else self._safe_json([])
+        mitre_values = self._safe_json([t[1] for t in mitre_counts]) if mitre_counts else self._safe_json([])
 
         return f"""
         <div class="content-section" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); padding: 50px 80px;">
@@ -822,7 +832,7 @@ class EnterpriseReportGenerator:
                     labels: ['Critical', 'High', 'Medium', 'Low/Safe'],
                     datasets: [{{
                         data: [{stats['critical']}, {stats['high']}, {stats['medium']}, {stats['low']}],
-                        backgroundColor: ['#ff3366', '#ff8800', '#ffaa00', '#00d4aa'],
+                        backgroundColor: ['#f85149', '#d29922', '#d29922', '#3fb950'],
                         borderWidth: 0
                     }}]
                 }},
@@ -849,7 +859,7 @@ class EnterpriseReportGenerator:
                     datasets: [{{
                         label: 'Threat Count',
                         data: {threat_values},
-                        backgroundColor: '#667eea',
+                        backgroundColor: '#7c6bf5',
                         borderRadius: 8
                     }}]
                 }},
@@ -883,7 +893,7 @@ class EnterpriseReportGenerator:
                     datasets: [{{
                         label: 'Breached Emails',
                         data: {breach_domain_values},
-                        backgroundColor: '#ff3366',
+                        backgroundColor: '#f85149',
                         borderRadius: 8
                     }}]
                 }},
@@ -917,7 +927,7 @@ class EnterpriseReportGenerator:
                     datasets: [{{
                         label: 'Email Count',
                         data: {score_counts},
-                        backgroundColor: ['#00d4aa', '#ffaa00', '#ff8800', '#ff6644', '#ff3366'],
+                        backgroundColor: ['#3fb950', '#d29922', '#d29922', '#f85149', '#f85149'],
                         borderRadius: 8
                     }}]
                 }},
@@ -947,7 +957,7 @@ class EnterpriseReportGenerator:
                     datasets: [{{
                         label: 'Detection Count',
                         data: {mitre_values},
-                        backgroundColor: '#764ba2',
+                        backgroundColor: '#a78bfa',
                         borderRadius: 6
                     }}]
                 }},
@@ -995,7 +1005,7 @@ class EnterpriseReportGenerator:
         ml_data = {}
 
         for r in results:
-            ml_preds = r.get('ml_predictions', {})
+            ml_preds = r.get('ml_predictions') or {}
             for model, val in ml_preds.items():
                 if model in skip_keys:
                     continue
@@ -1022,15 +1032,15 @@ class EnterpriseReportGenerator:
             # Ensure it's a Python float, not numpy
             model_scores.append(round(float(data['avg'] * 100), 1))
 
-        model_names_json = json.dumps(model_names)
-        model_scores_json = json.dumps(model_scores)
+        model_names_json = self._safe_json(model_names)
+        model_scores_json = self._safe_json(model_scores)
 
         # Prepare data for prediction confidence distribution
         confidence_ranges = ['0-20%', '20-40%', '40-60%', '60-80%', '80-100%']
         confidence_counts = [0, 0, 0, 0, 0]
 
         for r in results:
-            ensemble = r.get('ml_predictions', {}).get('ensemble') or 0
+            ensemble = (r.get('ml_predictions') or {}).get('ensemble') or 0
             # Convert to Python float
             ensemble = float(to_python_type(ensemble) or 0)
             score_pct = ensemble * 100
@@ -1045,14 +1055,14 @@ class EnterpriseReportGenerator:
             else:
                 confidence_counts[4] += 1
 
-        confidence_ranges_json = json.dumps(confidence_ranges)
-        confidence_counts_json = json.dumps(confidence_counts)
+        confidence_ranges_json = self._safe_json(confidence_ranges)
+        confidence_counts_json = self._safe_json(confidence_counts)
 
         # Count ML model accuracy by risk level
         risk_accuracy = {'critical': [], 'high': [], 'medium': [], 'low': []}
         for r in results:
             risk_level = r.get('risk_level', 'low')
-            ensemble = r.get('ml_predictions', {}).get('ensemble') or 0
+            ensemble = (r.get('ml_predictions') or {}).get('ensemble') or 0
             # Convert to Python float
             ensemble = float(to_python_type(ensemble) or 0)
             if risk_level in risk_accuracy:
@@ -1068,11 +1078,11 @@ class EnterpriseReportGenerator:
                 avg = float(sum(risk_accuracy[level]) / len(risk_accuracy[level]))
                 avg_predictions.append(round(avg, 1))
 
-        risk_levels_json = json.dumps(risk_levels)
-        avg_predictions_json = json.dumps(avg_predictions)
+        risk_levels_json = self._safe_json(risk_levels)
+        avg_predictions_json = self._safe_json(avg_predictions)
 
         return f"""
-        <div class="content-section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 50px 80px; color: white;">
+        <div class="content-section" style="background: linear-gradient(135deg, #7c6bf5 0%, #a78bfa 100%); padding: 50px 80px; color: white;">
             <h2 class="section-title" style="color: white; margin-bottom: 40px;">
                 <span class="section-icon">🧠</span>
                 Machine Learning Prediction Analysis
@@ -1172,8 +1182,8 @@ class EnterpriseReportGenerator:
                         label: 'Average Risk Score (%)',
                         data: {model_scores_json},
                         backgroundColor: [
-                            '#4CAF50', '#2196F3', '#FF9800', '#E91E63',
-                            '#9C27B0', '#00BCD4', '#FFC107'
+                            '#3fb950', '#4f8ff7', '#d29922', '#f85149',
+                            '#a78bfa', '#58a6ff', '#e3b341'
                         ],
                         borderRadius: 8
                     }}]
@@ -1208,7 +1218,7 @@ class EnterpriseReportGenerator:
                     datasets: [{{
                         data: {confidence_counts_json},
                         backgroundColor: [
-                            '#4CAF50', '#8BC34A', '#FFC107', '#FF9800', '#F44336'
+                            '#3fb950', '#56d364', '#e3b341', '#d29922', '#f85149'
                         ],
                         borderWidth: 0
                     }}]
@@ -1240,7 +1250,7 @@ class EnterpriseReportGenerator:
                     datasets: [{{
                         label: 'Average ML Prediction Score',
                         data: {avg_predictions_json},
-                        backgroundColor: ['#F44336', '#FF9800', '#FFC107', '#4CAF50'],
+                        backgroundColor: ['#f85149', '#d29922', '#e3b341', '#3fb950'],
                         borderRadius: 10
                     }}]
                 }},
@@ -1278,7 +1288,7 @@ class EnterpriseReportGenerator:
 
         # Determine compliance status color
         status = stats.get('status', 'UNKNOWN')
-        status_color = '#00d4aa' if status == 'COMPLIANT' else '#ffaa00' if status == 'PARTIAL' else '#ff3366'
+        status_color = '#3fb950' if status == 'COMPLIANT' else '#d29922' if status == 'PARTIAL' else '#f85149'
 
         return f"""
         <div class="content-section" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 50px 80px; color: white;">
@@ -1362,7 +1372,7 @@ class EnterpriseReportGenerator:
                         </div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                             <span>📢 Breach Notifications Required:</span>
-                            <strong style="color: #ffaa00;">{stats.get('breach_notified', 0)}</strong>
+                            <strong style="color: #d29922;">{stats.get('breach_notified', 0)}</strong>
                         </div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                             <span>⚠️ Personal Data at Risk:</span>
@@ -1370,7 +1380,7 @@ class EnterpriseReportGenerator:
                         </div>
                         <div style="display: flex; justify-content: space-between; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
                             <span>✅ Data Protection Rate:</span>
-                            <strong style="color: #00d4aa;">{stats.get('gdpr_data_protection_rate', 0):.1f}%</strong>
+                            <strong style="color: #3fb950;">{stats.get('gdpr_data_protection_rate', 0):.1f}%</strong>
                         </div>
                     </div>
                 </div>
@@ -1385,15 +1395,15 @@ class EnterpriseReportGenerator:
                         </div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                             <span>🔐 Access Controlled (A.5.15):</span>
-                            <strong style="color: #00d4aa;">{stats.get('access_controlled', 0)}</strong>
+                            <strong style="color: #3fb950;">{stats.get('access_controlled', 0)}</strong>
                         </div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                             <span>🔒 Encrypted Accounts (A.8.24):</span>
-                            <strong style="color: #00d4aa;">{stats.get('encrypted', 0)}</strong>
+                            <strong style="color: #3fb950;">{stats.get('encrypted', 0)}</strong>
                         </div>
                         <div style="display: flex; justify-content: space-between; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
                             <span>✅ Security Control Coverage:</span>
-                            <strong style="color: #00d4aa;">{stats.get('security_control_coverage', 0):.1f}%</strong>
+                            <strong style="color: #3fb950;">{stats.get('security_control_coverage', 0):.1f}%</strong>
                         </div>
                     </div>
                 </div>
@@ -1450,7 +1460,7 @@ class EnterpriseReportGenerator:
         threat_type_details = {}
 
         for r in results:
-            for threat in r.get('threats', []):
+            for threat in (r.get('threats') or []):
                 t_type = threat.get('type', 'unknown')
                 severity = threat.get('severity', 'low')
                 threat_severity_map[severity] = threat_severity_map.get(severity, 0) + 1
@@ -1485,17 +1495,17 @@ class EnterpriseReportGenerator:
         }
 
         severity_colors = {
-            'critical': '#ff3366', 'high': '#ff8800', 'medium': '#ffaa00', 'low': '#00d4aa'
+            'critical': '#f85149', 'high': '#d29922', 'medium': '#d29922', 'low': '#3fb950'
         }
 
         # Build chart data
         top_types = sorted_threats[:12]
-        chart_labels = json.dumps([t[0].replace('_', ' ').title() for t in top_types])
-        chart_values = json.dumps([t[1]['count'] for t in top_types])
-        chart_colors = json.dumps([severity_colors.get(t[1]['severity'], '#667eea') for t in top_types])
+        chart_labels = self._safe_json([t[0].replace('_', ' ').title() for t in top_types])
+        chart_values = self._safe_json([t[1]['count'] for t in top_types])
+        chart_colors = self._safe_json([severity_colors.get(t[1]['severity'], '#7c6bf5') for t in top_types])
 
-        severity_json = json.dumps([threat_severity_map.get('critical', 0), threat_severity_map.get('high', 0),
-                                     threat_severity_map.get('medium', 0), threat_severity_map.get('low', 0)])
+        severity_json = self._safe_json([threat_severity_map.get('critical', 0), threat_severity_map.get('high', 0),
+                                         threat_severity_map.get('medium', 0), threat_severity_map.get('low', 0)])
 
         html = f"""
         <div class="content-section" style="background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); padding: 50px 80px; color: white;">
@@ -1506,20 +1516,20 @@ class EnterpriseReportGenerator:
 
             <!-- Threat Severity Overview -->
             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px;">
-                <div style="background: rgba(255,51,102,0.2); border: 2px solid #ff3366; border-radius: 15px; padding: 25px; text-align: center;">
-                    <div style="font-size: 42px; font-weight: 800; color: #ff3366;">{threat_severity_map.get('critical', 0)}</div>
+                <div style="background: rgba(248,81,73,0.2); border: 2px solid #f85149; border-radius: 15px; padding: 25px; text-align: center;">
+                    <div style="font-size: 42px; font-weight: 800; color: #f85149;">{threat_severity_map.get('critical', 0)}</div>
                     <div style="font-size: 14px; opacity: 0.9; margin-top: 5px;">Critical Threats</div>
                 </div>
-                <div style="background: rgba(255,136,0,0.2); border: 2px solid #ff8800; border-radius: 15px; padding: 25px; text-align: center;">
-                    <div style="font-size: 42px; font-weight: 800; color: #ff8800;">{threat_severity_map.get('high', 0)}</div>
+                <div style="background: rgba(210,153,34,0.2); border: 2px solid #d29922; border-radius: 15px; padding: 25px; text-align: center;">
+                    <div style="font-size: 42px; font-weight: 800; color: #d29922;">{threat_severity_map.get('high', 0)}</div>
                     <div style="font-size: 14px; opacity: 0.9; margin-top: 5px;">High Threats</div>
                 </div>
-                <div style="background: rgba(255,170,0,0.2); border: 2px solid #ffaa00; border-radius: 15px; padding: 25px; text-align: center;">
-                    <div style="font-size: 42px; font-weight: 800; color: #ffaa00;">{threat_severity_map.get('medium', 0)}</div>
+                <div style="background: rgba(210,153,34,0.2); border: 2px solid #d29922; border-radius: 15px; padding: 25px; text-align: center;">
+                    <div style="font-size: 42px; font-weight: 800; color: #d29922;">{threat_severity_map.get('medium', 0)}</div>
                     <div style="font-size: 14px; opacity: 0.9; margin-top: 5px;">Medium Threats</div>
                 </div>
-                <div style="background: rgba(0,212,170,0.2); border: 2px solid #00d4aa; border-radius: 15px; padding: 25px; text-align: center;">
-                    <div style="font-size: 42px; font-weight: 800; color: #00d4aa;">{threat_severity_map.get('low', 0)}</div>
+                <div style="background: rgba(0,212,170,0.2); border: 2px solid #3fb950; border-radius: 15px; padding: 25px; text-align: center;">
+                    <div style="font-size: 42px; font-weight: 800; color: #3fb950;">{threat_severity_map.get('low', 0)}</div>
                     <div style="font-size: 14px; opacity: 0.9; margin-top: 5px;">Low Threats</div>
                 </div>
             </div>
@@ -1543,7 +1553,7 @@ class EnterpriseReportGenerator:
 
         for t_type, info in sorted_threats[:15]:
             icon = threat_icons.get(t_type, '⚡')
-            sev_color = severity_colors.get(info['severity'], '#667eea')
+            sev_color = severity_colors.get(info['severity'], '#7c6bf5')
             avg_conf = sum(info['avg_confidence']) / len(info['avg_confidence']) if info['avg_confidence'] else 0
             affected_emails = list(set(info['emails']))[:5]
             email_list = ', '.join(self._esc(e) for e in affected_emails)
@@ -1608,7 +1618,7 @@ class EnterpriseReportGenerator:
                     labels: ['Critical', 'High', 'Medium', 'Low'],
                     datasets: [{{
                         data: {severity_json},
-                        backgroundColor: ['#ff3366', '#ff8800', '#ffaa00', '#00d4aa'],
+                        backgroundColor: ['#f85149', '#d29922', '#d29922', '#3fb950'],
                         borderWidth: 0
                     }}]
                 }},
@@ -1636,7 +1646,7 @@ class EnterpriseReportGenerator:
         for r in results:
             email = r.get('email', 'N/A')
             # Check for disposable email threat
-            for threat in r.get('threats', []):
+            for threat in (r.get('threats') or []):
                 if threat.get('type') == 'disposable_email':
                     disposable_emails.append({
                         'email': email,
@@ -1646,7 +1656,7 @@ class EnterpriseReportGenerator:
                     break
 
             # Check for typosquatting
-            typosquat_info = r.get('typosquat_info', {})
+            typosquat_info = r.get('typosquat_info') or {}
             if typosquat_info.get('is_typosquat'):
                 typosquat_emails.append({
                     'email': email,
@@ -1694,12 +1704,12 @@ class EnterpriseReportGenerator:
             """
             for d in disposable_emails:
                 html += f"""
-                <div style="background: rgba(255,255,255,0.06); border-left: 4px solid #ff3366; border-radius: 0 10px 10px 0; padding: 15px 20px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="background: rgba(255,255,255,0.06); border-left: 4px solid #f85149; border-radius: 0 10px 10px 0; padding: 15px 20px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <div style="font-weight: 600; font-size: 16px;">{self._esc(d['email'])}</div>
                         <div style="font-size: 12px; opacity: 0.6;">Confidence: {d['confidence']:.0%}</div>
                     </div>
-                    <div style="background: #ff3366; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;">Risk: {d['risk_score']}/100</div>
+                    <div style="background: #f85149; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;">Risk: {d['risk_score']}/100</div>
                 </div>
                 """
             html += "</div>"
@@ -1712,14 +1722,14 @@ class EnterpriseReportGenerator:
                 <p style="font-size: 14px; opacity: 0.7; margin-bottom: 20px;">These domains mimic legitimate email providers to deceive recipients. This is a common phishing/social engineering tactic.</p>
             """
             for t in typosquat_emails:
-                similarity_color = '#ff3366' if t['similarity'] > 0.9 else '#ff8800' if t['similarity'] > 0.7 else '#ffaa00'
+                similarity_color = '#f85149' if t['similarity'] > 0.9 else '#d29922' if t['similarity'] > 0.7 else '#d29922'
                 html += f"""
                 <div style="background: rgba(255,255,255,0.06); border-left: 4px solid {similarity_color}; border-radius: 0 10px 10px 0; padding: 15px 20px; margin-bottom: 12px;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
                             <div style="font-weight: 600; font-size: 16px;">{self._esc(t['email'])}</div>
                             <div style="font-size: 13px; opacity: 0.8; margin-top: 5px;">
-                                Impersonating: <strong style="color: #00d4aa;">{self._esc(t['target_domain'])}</strong> |
+                                Impersonating: <strong style="color: #3fb950;">{self._esc(t['target_domain'])}</strong> |
                                 Attack: <strong>{self._esc(t['attack_type'].replace('_', ' ').title())}</strong> |
                                 Similarity: <strong style="color: {similarity_color};">{t['similarity']:.0%}</strong>
                             </div>
@@ -1762,7 +1772,7 @@ class EnterpriseReportGenerator:
                 domain_data[domain]['total_risk'] += r.get('risk_score', 0)
 
             # Collect vulnerabilities
-            for vuln in r.get('vulnerabilities', []):
+            for vuln in (r.get('vulnerabilities') or []):
                 all_vulnerabilities.append({
                     'email': email,
                     'domain': domain,
@@ -1788,12 +1798,12 @@ class EnterpriseReportGenerator:
             return ""
 
         # Chart data
-        domain_names = json.dumps([d[0] for d in sorted_domains[:10]])
-        domain_risks = json.dumps([d[1]['avg_risk'] for d in sorted_domains[:10]])
-        domain_scores = json.dumps([d[1]['score'] if isinstance(d[1]['score'], (int, float)) else 50 for d in sorted_domains[:10]])
+        domain_names = self._safe_json([d[0] for d in sorted_domains[:10]])
+        domain_risks = self._safe_json([d[1]['avg_risk'] for d in sorted_domains[:10]])
+        domain_scores = self._safe_json([d[1]['score'] if isinstance(d[1]['score'], (int, float)) else 50 for d in sorted_domains[:10]])
 
-        vuln_labels = json.dumps([v[0].replace('_', ' ').title() for v in vuln_counts.most_common(8)])
-        vuln_values = json.dumps([v[1] for v in vuln_counts.most_common(8)])
+        vuln_labels = self._safe_json([v[0].replace('_', ' ').title() for v in vuln_counts.most_common(8)])
+        vuln_values = self._safe_json([v[1] for v in vuln_counts.most_common(8)])
 
         html = f"""
         <div class="content-section" style="background: linear-gradient(135deg, #1a2a6c 0%, #b21f1f 50%, #fdbb2d 100%); padding: 50px 80px; color: white;">
@@ -1854,10 +1864,10 @@ class EnterpriseReportGenerator:
 
         for domain, info in sorted_domains[:20]:
             rep_score = info['score'] if isinstance(info['score'], (int, float)) else 'N/A'
-            rep_color = '#00d4aa' if isinstance(rep_score, (int, float)) and rep_score > 60 else '#ffaa00' if isinstance(rep_score, (int, float)) and rep_score > 30 else '#ff3366'
+            rep_color = '#3fb950' if isinstance(rep_score, (int, float)) and rep_score > 60 else '#d29922' if isinstance(rep_score, (int, float)) and rep_score > 30 else '#f85149'
             age_display = f"{info['age']}" if isinstance(info['age'], (int, float)) else 'Unknown'
-            age_color = '#ff3366' if isinstance(info['age'], (int, float)) and info['age'] < 30 else '#ffaa00' if isinstance(info['age'], (int, float)) and info['age'] < 365 else '#00d4aa'
-            risk_color = '#ff3366' if info['avg_risk'] > 60 else '#ffaa00' if info['avg_risk'] > 40 else '#00d4aa'
+            age_color = '#f85149' if isinstance(info['age'], (int, float)) and info['age'] < 30 else '#d29922' if isinstance(info['age'], (int, float)) and info['age'] < 365 else '#3fb950'
+            risk_color = '#f85149' if info['avg_risk'] > 60 else '#d29922' if info['avg_risk'] > 40 else '#3fb950'
             flags_display = ', '.join(self._esc(str(f)) for f in info['flags'][:4]) if info['flags'] else 'None'
 
             html += f"""
@@ -1900,11 +1910,11 @@ class EnterpriseReportGenerator:
                 'weak_password_policy': '🔑', 'no_mfa': '📱'
             }
 
-            severity_colors = {'critical': '#ff3366', 'high': '#ff8800', 'medium': '#ffaa00', 'low': '#00d4aa'}
+            severity_colors = {'critical': '#f85149', 'high': '#d29922', 'medium': '#d29922', 'low': '#3fb950'}
 
             for vt, vinfo in sorted(vuln_by_type.items(), key=lambda x: {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}.get(x[1]['severity'], 4)):
                 icon = vuln_icons.get(vt, '⚠️')
-                sev_color = severity_colors.get(vinfo['severity'], '#667eea')
+                sev_color = severity_colors.get(vinfo['severity'], '#7c6bf5')
                 domains_list = ', '.join(self._esc(d) for d in list(vinfo['domains'])[:5])
                 if len(vinfo['domains']) > 5:
                     domains_list += f' (+{len(vinfo["domains"]) - 5} more)'
@@ -1922,7 +1932,7 @@ class EnterpriseReportGenerator:
                         </div>
                     </div>
                     <div style="font-size: 13px; opacity: 0.8;">{self._esc(vinfo['description'])}</div>
-                    {'<div style="font-size: 12px; color: #00d4aa; margin-top: 6px;"><strong>Remediation:</strong> ' + self._esc(vinfo["remediation"]) + '</div>' if vinfo['remediation'] else ''}
+                    {'<div style="font-size: 12px; color: #3fb950; margin-top: 6px;"><strong>Remediation:</strong> ' + self._esc(vinfo["remediation"]) + '</div>' if vinfo['remediation'] else ''}
                     <div style="font-size: 11px; opacity: 0.5; margin-top: 6px;">Affected domains: {domains_list}</div>
                 </div>
                 """
@@ -1941,7 +1951,7 @@ class EnterpriseReportGenerator:
                         {{
                             label: 'Risk Score',
                             data: {domain_risks},
-                            backgroundColor: 'rgba(255,51,102,0.7)',
+                            backgroundColor: 'rgba(248,81,73,0.7)',
                             borderRadius: 6
                         }},
                         {{
@@ -1971,7 +1981,7 @@ class EnterpriseReportGenerator:
                     labels: {vuln_labels},
                     datasets: [{{
                         data: {vuln_values},
-                        backgroundColor: ['#ff3366', '#ff8800', '#ffaa00', '#667eea', '#764ba2', '#00d4aa', '#4466ff', '#9C27B0'],
+                        backgroundColor: ['#f85149', '#d29922', '#d29922', '#7c6bf5', '#a78bfa', '#3fb950', '#58a6ff', '#a78bfa'],
                         borderWidth: 0
                     }}]
                 }},
@@ -1984,6 +1994,142 @@ class EnterpriseReportGenerator:
                 }}
             }});
         </script>
+        """
+
+        return html
+
+    def _generate_advanced_security_section(self, results: List[Dict]) -> str:
+        """Generate advanced security checks section (DNSBL, CT, DGA, ThreatFox, Gravatar, Parked)"""
+        has_any = any(
+            r.get('dnsbl') or r.get('cert_transparency') or r.get('threatfox') or
+            r.get('dga_analysis') or r.get('parked_domain') or r.get('gravatar')
+            for r in results
+        )
+        if not has_any:
+            return ''
+
+        # Aggregate stats
+        dnsbl_listed = sum(1 for r in results if (r.get('dnsbl') or {}).get('listed'))
+        threatfox_found = sum(1 for r in results if (r.get('threatfox') or {}).get('found'))
+        dga_detected = sum(1 for r in results if (r.get('dga_analysis') or {}).get('is_dga'))
+        parked_count = sum(1 for r in results if (r.get('parked_domain') or {}).get('is_parked'))
+        gravatar_count = sum(1 for r in results if (r.get('gravatar') or {}).get('has_profile'))
+        ct_count = sum(1 for r in results if (r.get('cert_transparency') or {}).get('found'))
+        total = len(results)
+
+        # DNS protocol adoption
+        bimi_count = sum(1 for r in results if (r.get('dns_security') or {}).get('bimi'))
+        mta_sts_count = sum(1 for r in results if (r.get('dns_security') or {}).get('mta_sts'))
+        tls_rpt_count = sum(1 for r in results if (r.get('dns_security') or {}).get('tls_rpt'))
+
+        html = f"""
+        <!-- Advanced Security Checks -->
+        <div class="content-section" style="padding: 60px 80px;">
+            <h2 class="section-title" style="color: #1e3c72; font-size: 28px; margin-bottom: 30px;">
+                <span style="margin-right: 10px;">&#x1f6e1;</span>Advanced Security Intelligence
+            </h2>
+
+            <!-- Summary Cards -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px;">
+                <div style="background: {'#fff5f5' if dnsbl_listed else '#f0fff4'}; border-radius: 12px; padding: 25px; border-left: 4px solid {'#e53e3e' if dnsbl_listed else '#38a169'};">
+                    <div style="font-size: 32px; font-weight: 800; color: {'#e53e3e' if dnsbl_listed else '#38a169'};">{dnsbl_listed}</div>
+                    <div style="font-size: 14px; color: #4a5568; margin-top: 5px;">DNSBL Blacklisted</div>
+                    <div style="font-size: 12px; color: #718096;">of {total} domains checked</div>
+                </div>
+                <div style="background: {'#fff5f5' if threatfox_found else '#f0fff4'}; border-radius: 12px; padding: 25px; border-left: 4px solid {'#e53e3e' if threatfox_found else '#38a169'};">
+                    <div style="font-size: 32px; font-weight: 800; color: {'#e53e3e' if threatfox_found else '#38a169'};">{threatfox_found}</div>
+                    <div style="font-size: 14px; color: #4a5568; margin-top: 5px;">ThreatFox IOC Matches</div>
+                    <div style="font-size: 12px; color: #718096;">abuse.ch threat database</div>
+                </div>
+                <div style="background: {'#fffaf0' if dga_detected else '#f0fff4'}; border-radius: 12px; padding: 25px; border-left: 4px solid {'#dd6b20' if dga_detected else '#38a169'};">
+                    <div style="font-size: 32px; font-weight: 800; color: {'#dd6b20' if dga_detected else '#38a169'};">{dga_detected}</div>
+                    <div style="font-size: 14px; color: #4a5568; margin-top: 5px;">DGA Domains Detected</div>
+                    <div style="font-size: 12px; color: #718096;">algorithmically generated</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px;">
+                <div style="background: #f7fafc; border-radius: 12px; padding: 25px; border-left: 4px solid #4299e1;">
+                    <div style="font-size: 32px; font-weight: 800; color: #4299e1;">{gravatar_count}</div>
+                    <div style="font-size: 14px; color: #4a5568; margin-top: 5px;">Gravatar Profiles</div>
+                    <div style="font-size: 12px; color: #718096;">verified user presence</div>
+                </div>
+                <div style="background: {'#fffaf0' if parked_count else '#f0fff4'}; border-radius: 12px; padding: 25px; border-left: 4px solid {'#dd6b20' if parked_count else '#38a169'};">
+                    <div style="font-size: 32px; font-weight: 800; color: {'#dd6b20' if parked_count else '#38a169'};">{parked_count}</div>
+                    <div style="font-size: 14px; color: #4a5568; margin-top: 5px;">Parked Domains</div>
+                    <div style="font-size: 12px; color: #718096;">inactive or for sale</div>
+                </div>
+                <div style="background: #f7fafc; border-radius: 12px; padding: 25px; border-left: 4px solid #4299e1;">
+                    <div style="font-size: 32px; font-weight: 800; color: #4299e1;">{ct_count}</div>
+                    <div style="font-size: 14px; color: #4a5568; margin-top: 5px;">CT Log Entries</div>
+                    <div style="font-size: 12px; color: #718096;">certificate transparency</div>
+                </div>
+            </div>
+
+            <!-- Email Protocol Adoption -->
+            <h3 style="font-size: 20px; color: #2d3748; margin-bottom: 20px;">Email Protocol Adoption</h3>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 30px;">
+                <div style="background: #f7fafc; border-radius: 8px; padding: 15px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: 700; color: #4299e1;">{bimi_count}/{total}</div>
+                    <div style="font-size: 13px; color: #718096;">BIMI</div>
+                </div>
+                <div style="background: #f7fafc; border-radius: 8px; padding: 15px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: 700; color: #4299e1;">{mta_sts_count}/{total}</div>
+                    <div style="font-size: 13px; color: #718096;">MTA-STS</div>
+                </div>
+                <div style="background: #f7fafc; border-radius: 8px; padding: 15px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: 700; color: #4299e1;">{tls_rpt_count}/{total}</div>
+                    <div style="font-size: 13px; color: #718096;">TLS-RPT</div>
+                </div>
+            </div>
+
+            <!-- Detailed Table -->
+            <h3 style="font-size: 20px; color: #2d3748; margin-bottom: 20px;">Per-Email Advanced Check Results</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <thead>
+                    <tr style="background: #edf2f7;">
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #cbd5e0;">Email</th>
+                        <th style="padding: 12px; text-align: center; border-bottom: 2px solid #cbd5e0;">DNSBL</th>
+                        <th style="padding: 12px; text-align: center; border-bottom: 2px solid #cbd5e0;">ThreatFox</th>
+                        <th style="padding: 12px; text-align: center; border-bottom: 2px solid #cbd5e0;">DGA</th>
+                        <th style="padding: 12px; text-align: center; border-bottom: 2px solid #cbd5e0;">Certs</th>
+                        <th style="padding: 12px; text-align: center; border-bottom: 2px solid #cbd5e0;">Gravatar</th>
+                        <th style="padding: 12px; text-align: center; border-bottom: 2px solid #cbd5e0;">Parked</th>
+                    </tr>
+                </thead>
+                <tbody>"""
+
+        for r in results:
+            dnsbl = r.get('dnsbl') or {}
+            tfox = r.get('threatfox') or {}
+            dga = r.get('dga_analysis') or {}
+            ct = r.get('cert_transparency') or {}
+            grav = r.get('gravatar') or {}
+            park = r.get('parked_domain') or {}
+
+            dnsbl_html = f'<span style="color:#e53e3e;">Listed ({self._esc(str(dnsbl.get("listed_count", 0)))})</span>' if dnsbl.get('listed') else '<span style="color:#38a169;">Clean</span>'
+            tfox_html = f'<span style="color:#e53e3e;">{self._esc(str(tfox.get("ioc_count", 0)))} IOC(s)</span>' if tfox.get('found') else '<span style="color:#38a169;">Clean</span>'
+            dga_score_val = float(dga.get('dga_score') or 0.0)
+            dga_html = f'<span style="color:#dd6b20;">{dga_score_val:.0%}</span>' if dga.get('is_dga') else '<span style="color:#38a169;">Normal</span>'
+            ct_html = self._esc(str(ct.get('cert_count', 0))) if ct.get('found') else '-'
+            grav_html = '<span style="color:#4299e1;">Yes</span>' if grav.get('has_profile') else 'No'
+            park_html = '<span style="color:#dd6b20;">Parked</span>' if park.get('is_parked') else '<span style="color:#38a169;">Active</span>'
+
+            html += f"""
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 10px;">{self._esc(str(r.get('email', 'N/A')))}</td>
+                        <td style="padding: 10px; text-align: center;">{dnsbl_html}</td>
+                        <td style="padding: 10px; text-align: center;">{tfox_html}</td>
+                        <td style="padding: 10px; text-align: center;">{dga_html}</td>
+                        <td style="padding: 10px; text-align: center;">{ct_html}</td>
+                        <td style="padding: 10px; text-align: center;">{grav_html}</td>
+                        <td style="padding: 10px; text-align: center;">{park_html}</td>
+                    </tr>"""
+
+        html += """
+                </tbody>
+            </table>
+        </div>
         """
 
         return html
@@ -2005,7 +2151,7 @@ class EnterpriseReportGenerator:
 
             if breach_info.get('found'):
                 total_breach_count += 1
-                for breach in breach_info.get('details', []):
+                for breach in (breach_info.get('details') or []):
                     if isinstance(breach, dict):
                         data_classes = breach.get('data_classes') or []
                         for dc in data_classes:
@@ -2015,9 +2161,7 @@ class EnterpriseReportGenerator:
                         if isinstance(pwn_count, (int, float)):
                             total_affected_accounts += int(pwn_count)
                     elif isinstance(breach, list):
-                        for item in breach:
-                            if isinstance(item, str):
-                                total_breach_count += 1
+                        pass  # email already counted above; do not re-count per breach name
 
             # Password breaches
             pwd_breach = r.get('password_breach') or {}
@@ -2045,9 +2189,9 @@ class EnterpriseReportGenerator:
         low_count = sum(v for k, v in data_class_counts.items() if k not in high_sensitivity and k not in medium_sensitivity)
 
         # Chart data
-        dc_labels = json.dumps([dc[0] for dc in top_classes[:10]])
-        dc_values = json.dumps([dc[1] for dc in top_classes[:10]])
-        sensitivity_json = json.dumps([high_count, medium_count, low_count])
+        dc_labels = self._safe_json([dc[0] for dc in top_classes[:10]])
+        dc_values = self._safe_json([dc[1] for dc in top_classes[:10]])
+        sensitivity_json = self._safe_json([high_count, medium_count, low_count])
 
         html = f"""
         <div class="content-section" style="background: linear-gradient(135deg, #4a0e0e 0%, #8b0000 50%, #b91c1c 100%); padding: 50px 80px; color: white;">
@@ -2063,11 +2207,11 @@ class EnterpriseReportGenerator:
                     <div style="font-size: 13px; opacity: 0.9;">Data Types Exposed</div>
                 </div>
                 <div style="background: rgba(255,255,255,0.1); border-radius: 15px; padding: 25px; text-align: center;">
-                    <div style="font-size: 36px; font-weight: 800; color: #ff3366;">{high_count}</div>
+                    <div style="font-size: 36px; font-weight: 800; color: #f85149;">{high_count}</div>
                     <div style="font-size: 13px; opacity: 0.9;">High Sensitivity Exposures</div>
                 </div>
                 <div style="background: rgba(255,255,255,0.1); border-radius: 15px; padding: 25px; text-align: center;">
-                    <div style="font-size: 36px; font-weight: 800; color: #ffaa00;">{len(password_breaches)}</div>
+                    <div style="font-size: 36px; font-weight: 800; color: #d29922;">{len(password_breaches)}</div>
                     <div style="font-size: 13px; opacity: 0.9;">Password Breaches</div>
                 </div>
                 <div style="background: rgba(255,255,255,0.1); border-radius: 15px; padding: 25px; text-align: center;">
@@ -2105,8 +2249,8 @@ class EnterpriseReportGenerator:
         for dc, count in top_classes:
             icon = sensitivity_icons.get(dc, '📋')
             is_high = dc in high_sensitivity
-            bg_color = 'rgba(255,51,102,0.15)' if is_high else 'rgba(255,255,255,0.06)'
-            border_color = '#ff3366' if is_high else 'rgba(255,255,255,0.2)'
+            bg_color = 'rgba(248,81,73,0.15)' if is_high else 'rgba(255,255,255,0.06)'
+            border_color = '#f85149' if is_high else 'rgba(255,255,255,0.2)'
 
             html += f"""
                     <div style="background: {bg_color}; border: 1px solid {border_color}; border-radius: 10px; padding: 15px; display: flex; align-items: center; gap: 10px;">
@@ -2126,8 +2270,8 @@ class EnterpriseReportGenerator:
         # Password breach alerts
         if password_breaches:
             html += """
-            <div style="background: rgba(255,255,255,0.08); border: 2px solid #ff3366; border-radius: 20px; padding: 30px;">
-                <h3 style="font-size: 22px; margin-bottom: 10px; color: #ff3366;">🔑 PASSWORD BREACH ALERTS</h3>
+            <div style="background: rgba(255,255,255,0.08); border: 2px solid #f85149; border-radius: 20px; padding: 30px;">
+                <h3 style="font-size: 22px; margin-bottom: 10px; color: #f85149;">🔑 PASSWORD BREACH ALERTS</h3>
                 <p style="font-size: 14px; opacity: 0.7; margin-bottom: 20px;">
                     The following accounts have passwords found in dark web breach databases (verified via XposedOrNot Keccak-512 k-anonymity API).
                     These passwords MUST be changed immediately.
@@ -2135,12 +2279,12 @@ class EnterpriseReportGenerator:
             """
             for pwd in password_breaches:
                 html += f"""
-                <div style="background: rgba(255,51,102,0.15); border-left: 5px solid #ff3366; border-radius: 0 10px 10px 0; padding: 15px 20px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="background: rgba(248,81,73,0.15); border-left: 5px solid #f85149; border-radius: 0 10px 10px 0; padding: 15px 20px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <div style="font-weight: 700; font-size: 16px;">{self._esc(pwd['email'])}</div>
-                        <div style="font-size: 12px; color: #ff3366; font-weight: 600;">PASSWORD COMPROMISED - CHANGE IMMEDIATELY</div>
+                        <div style="font-size: 12px; color: #f85149; font-weight: 600;">PASSWORD COMPROMISED - CHANGE IMMEDIATELY</div>
                     </div>
-                    <div style="background: #ff3366; padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: 700;">Risk: {pwd['risk_score']}/100</div>
+                    <div style="background: #f85149; padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: 700;">Risk: {pwd['risk_score']}/100</div>
                 </div>
                 """
             html += "</div>"
@@ -2156,7 +2300,7 @@ class EnterpriseReportGenerator:
                     datasets: [{{
                         label: 'Exposure Count',
                         data: {dc_values},
-                        backgroundColor: '#ff3366',
+                        backgroundColor: '#f85149',
                         borderRadius: 8
                     }}]
                 }},
@@ -2178,7 +2322,7 @@ class EnterpriseReportGenerator:
                     labels: ['High Sensitivity', 'Medium Sensitivity', 'Low Sensitivity'],
                     datasets: [{{
                         data: {sensitivity_json},
-                        backgroundColor: ['#ff3366', '#ffaa00', '#00d4aa'],
+                        backgroundColor: ['#f85149', '#d29922', '#3fb950'],
                         borderWidth: 0
                     }}]
                 }},
@@ -2197,11 +2341,11 @@ class EnterpriseReportGenerator:
 
     def _generate_results_table_section(self, results: List[Dict]) -> str:
         """Generate detailed results table with ALL detection columns"""
-        html = """
+        html = f"""
         <div class="content-section">
             <h2 class="section-title">
                 <span class="section-icon">📈</span>
-                Comprehensive Analysis Results
+                Comprehensive Analysis Results (Top {min(50, len(results))} of {len(results)} by Risk Score)
             </h2>
 
             <div style="overflow-x: auto;">
@@ -2235,7 +2379,7 @@ class EnterpriseReportGenerator:
             breach_info = result.get('breach_info') or {}
             breached = 'YES' if breach_info.get('found') else 'NO'
             breach_count = breach_info.get('count', 0) if breach_info.get('found') else 0
-            threats = result.get('threats', [])
+            threats = result.get('threats') or []
             threat_count = len(threats)
 
             # Detection flags
@@ -2255,16 +2399,16 @@ class EnterpriseReportGenerator:
 
             # Threat types summary
             threat_types = list(set(t.get('type', '') for t in threats))
-            threat_summary = ', '.join(t.replace('_', ' ').title() for t in threat_types[:3])
+            threat_summary = ', '.join(self._esc(t.replace('_', ' ').title()) for t in threat_types[:3])
             if len(threat_types) > 3:
                 threat_summary += f' +{len(threat_types) - 3}'
 
             # Colors
-            score_color = '#ff3366' if score > 60 else '#ffaa00' if score > 40 else '#00d4aa'
+            score_color = '#f85149' if score > 60 else '#d29922' if score > 40 else '#3fb950'
             ensemble_val = float(ensemble) if ensemble is not None else 0
-            ensemble_color = '#ff3366' if ensemble_val > 0.7 else '#ffaa00' if ensemble_val > 0.4 else '#00d4aa'
+            ensemble_color = '#f85149' if ensemble_val > 0.7 else '#d29922' if ensemble_val > 0.4 else '#3fb950'
             anomaly_val = float(anomaly) if anomaly is not None else 0
-            anomaly_color = '#ff3366' if anomaly_val > 0.7 else '#ffaa00' if anomaly_val > 0.3 else '#00d4aa'
+            anomaly_color = '#f85149' if anomaly_val > 0.7 else '#d29922' if anomaly_val > 0.3 else '#3fb950'
 
             html += f"""
                     <tr>
@@ -2276,7 +2420,7 @@ class EnterpriseReportGenerator:
                             <span class="badge badge-{level}">{level.upper()}</span>
                         </td>
                         <td>
-                            <span style="color: {'#ff3366' if breached == 'YES' else '#00d4aa'}; font-weight: 700;">{breached}</span>
+                            <span style="color: {'#f85149' if breached == 'YES' else '#3fb950'}; font-weight: 700;">{breached}</span>
                         </td>
                         <td style="text-align: center;">
                             <span style="color: #1e3c72; font-weight: 700;">{breach_count}</span>
@@ -2285,13 +2429,13 @@ class EnterpriseReportGenerator:
                             <span style="color: #6c757d;">{threat_count}</span>
                         </td>
                         <td style="text-align: center;">
-                            <span style="color: {'#ff3366' if is_disposable else '#00d4aa'}; font-weight: 700;">{'🗑️ YES' if is_disposable else '✅ NO'}</span>
+                            <span style="color: {'#f85149' if is_disposable else '#3fb950'}; font-weight: 700;">{'🗑️ YES' if is_disposable else '✅ NO'}</span>
                         </td>
                         <td style="text-align: center;">
-                            {'<span style="color: #ff3366; font-weight: 700;" title="Impersonates ' + self._esc(typosquat_target) + '">🎭 ' + self._esc(typosquat_target) + '</span>' if is_typosquat else '<span style="color: #00d4aa;">✅ NO</span>'}
+                            {'<span style="color: #f85149; font-weight: 700;" title="Impersonates ' + self._esc(typosquat_target) + '">🎭 ' + self._esc(typosquat_target) + '</span>' if is_typosquat else '<span style="color: #3fb950;">✅ NO</span>'}
                         </td>
                         <td style="text-align: center; font-weight: 600;">
-                            {dns_score}
+                            {self._esc(str(dns_score))}
                         </td>
                         <td style="text-align: center;">
                             <span style="color: {ensemble_color}; font-weight: 700;">{f'{ensemble_val:.0%}' if ensemble is not None else 'N/A'}</span>
@@ -2299,8 +2443,8 @@ class EnterpriseReportGenerator:
                         <td style="text-align: center;">
                             <span style="color: {anomaly_color}; font-weight: 700;">{f'{anomaly_val:.0%}' if anomaly is not None else 'N/A'}</span>
                         </td>
-                        <td style="font-size: 11px; max-width: 180px; overflow: hidden; text-overflow: ellipsis;" title="{', '.join(t.replace('_', ' ') for t in threat_types)}">
-                            {threat_summary if threat_summary else '<span style="color: #00d4aa;">None</span>'}
+                        <td style="font-size: 11px; max-width: 180px; overflow: hidden; text-overflow: ellipsis;" title="{self._esc(', '.join(t.replace('_', ' ') for t in threat_types))}">
+                            {threat_summary if threat_summary else '<span style="color: #3fb950;">None</span>'}
                         </td>
                     </tr>
             """
@@ -2326,9 +2470,9 @@ class EnterpriseReportGenerator:
             <div style="background: white; border-radius: 15px; padding: 30px; margin-bottom: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.06);">
                 <p style="font-size: 16px; line-height: 1.8; color: #6c757d;">
                     This table shows compliance status for each email against specific ISO 27001:2022 controls and GDPR articles.
-                    <strong style="color: #00d4aa;">✅ PASS</strong> indicates compliance,
-                    <strong style="color: #ff3366;">❌ FAIL</strong> indicates violation,
-                    <strong style="color: #ffaa00;">❌ NOTIFY</strong> indicates breach notification required.
+                    <strong style="color: #3fb950;">✅ PASS</strong> indicates compliance,
+                    <strong style="color: #f85149;">❌ FAIL</strong> indicates violation,
+                    <strong style="color: #d29922;">❌ NOTIFY</strong> indicates breach notification required.
                 </p>
             </div>
 
@@ -2353,44 +2497,44 @@ class EnterpriseReportGenerator:
 
         for result in sorted_results:
             email = result.get('email', 'N/A')
-            breach_info = result.get('breach_info', {})
-            dns = result.get('dns_security', {})
+            breach_info = result.get('breach_info') or {}
+            dns = result.get('dns_security') or {}
             risk_level = result.get('risk_level', 'unknown')
 
             # GDPR Article 5 - Data Protection Principles (violated if personal data at risk)
             gdpr_art5 = '❌ FAIL' if (breach_info.get('found') or risk_level in ['critical', 'high']) else '✅ PASS'
-            gdpr_art5_color = '#ff3366' if '❌' in gdpr_art5 else '#00d4aa'
+            gdpr_art5_color = '#f85149' if '❌' in gdpr_art5 else '#3fb950'
             gdpr_art5_reason = 'Personal data at risk' if '❌' in gdpr_art5 else 'Data protected'
 
             # GDPR Article 32 - Security of Processing (violated if breached)
             gdpr_art32 = '❌ FAIL' if breach_info.get('found') else '✅ PASS'
-            gdpr_art32_color = '#ff3366' if '❌' in gdpr_art32 else '#00d4aa'
+            gdpr_art32_color = '#f85149' if '❌' in gdpr_art32 else '#3fb950'
             gdpr_art32_reason = 'Security breach detected' if '❌' in gdpr_art32 else 'No breaches'
 
             # GDPR Article 33 - Breach Notification (requires notification if high/critical breach)
             requires_notification = breach_info.get('found') and breach_info.get('severity') in ['high', 'critical']
             gdpr_art33 = '❌ NOTIFY' if requires_notification else '✅ N/A'
-            gdpr_art33_color = '#ffaa00' if '❌' in gdpr_art33 else '#00d4aa'
+            gdpr_art33_color = '#d29922' if '❌' in gdpr_art33 else '#3fb950'
             gdpr_art33_reason = 'Notification required within 72h' if requires_notification else 'No notification needed'
 
             # ISO 27001:2022 A.5.7 - Threat Intelligence (violated if high/critical risk)
             iso_a57 = '❌ FAIL' if risk_level in ['critical', 'high'] else '✅ PASS'
-            iso_a57_color = '#ff3366' if '❌' in iso_a57 else '#00d4aa'
+            iso_a57_color = '#f85149' if '❌' in iso_a57 else '#3fb950'
             iso_a57_reason = f'High-risk threats detected' if '❌' in iso_a57 else 'No threats'
 
             # ISO 27001:2022 A.5.15 - Access Control (pass if not breached and low risk)
             iso_a515 = '✅ PASS' if (not breach_info.get('found') and risk_level in ['low', 'minimal']) else '❌ FAIL'
-            iso_a515_color = '#00d4aa' if '✅' in iso_a515 else '#ff3366'
+            iso_a515_color = '#3fb950' if '✅' in iso_a515 else '#f85149'
             iso_a515_reason = 'Access controlled' if '✅' in iso_a515 else 'Access compromised'
 
             # ISO 27001:2022 A.8.24 - Cryptographic Controls (pass if not breached)
             iso_a824 = '✅ PASS' if not breach_info.get('found') else '❌ FAIL'
-            iso_a824_color = '#00d4aa' if '✅' in iso_a824 else '#ff3366'
+            iso_a824_color = '#3fb950' if '✅' in iso_a824 else '#f85149'
             iso_a824_reason = 'Encryption intact' if '✅' in iso_a824 else 'Encryption compromised'
 
             # Email Authentication (pass if SPF + DMARC + DKIM)
             email_auth = '✅ PASS' if (dns.get('spf') and dns.get('dmarc') and dns.get('dkim')) else '❌ FAIL'
-            email_auth_color = '#00d4aa' if '✅' in email_auth else '#ff3366'
+            email_auth_color = '#3fb950' if '✅' in email_auth else '#f85149'
             missing_auth = []
             if not dns.get('spf'): missing_auth.append('SPF')
             if not dns.get('dmarc'): missing_auth.append('DMARC')
@@ -2463,7 +2607,7 @@ class EnterpriseReportGenerator:
 
     def _generate_breach_details_section(self, results: List[Dict]) -> str:
         """Generate detailed breach information section"""
-        breached_emails = [r for r in results if r.get('breach_info', {}).get('found')]
+        breached_emails = [r for r in results if (r.get('breach_info') or {}).get('found')]
 
         if not breached_emails:
             return ""
@@ -2478,16 +2622,16 @@ class EnterpriseReportGenerator:
 
         for result in breached_emails[:20]:  # Show top 20 breached emails
             email = result.get('email', 'N/A')
-            breach_info = result.get('breach_info', {})
+            breach_info = result.get('breach_info') or {}
             severity = breach_info.get('severity', 'medium')
             count = breach_info.get('count', 0)
 
             severity_color = {
-                'critical': '#ff3366',
-                'high': '#ffaa00',
-                'medium': '#ff8800',
-                'low': '#00d4aa'
-            }.get(severity, '#ff8800')
+                'critical': '#f85149',
+                'high': '#d29922',
+                'medium': '#d29922',
+                'low': '#3fb950'
+            }.get(severity, '#d29922')
 
             html += f"""
             <div style="background: white; border-radius: 20px; padding: 40px; margin-bottom: 30px; border-left: 8px solid {severity_color}; box-shadow: 0 5px 20px rgba(0,0,0,0.08);">
@@ -2503,7 +2647,7 @@ class EnterpriseReportGenerator:
             """
 
             # Add breach details
-            details_list = breach_info.get('details', [])
+            details_list = breach_info.get('details') or []
             if not isinstance(details_list, list):
                 details_list = []
 
@@ -2572,7 +2716,7 @@ class EnterpriseReportGenerator:
                         if isinstance(data_classes, list) and data_classes:
                             data_list = ', '.join(esc(dc) for dc in data_classes[:8])
                             html += f"""
-                            <div style="color: #ff3366; font-size: 14px; margin-bottom: 5px;">
+                            <div style="color: #f85149; font-size: 14px; margin-bottom: 5px;">
                                 <strong>Compromised Data:</strong> {data_list}
                             </div>
                             """
@@ -2592,7 +2736,7 @@ class EnterpriseReportGenerator:
             mitre_details = result.get('mitre_details', [])
             if mitre_details:
                 html += """
-                <div style="background: #f0f4ff; border-radius: 15px; padding: 25px; margin-top: 25px; border: 2px solid #4466ff;">
+                <div style="background: #f0f4ff; border-radius: 15px; padding: 25px; margin-top: 25px; border: 2px solid #58a6ff;">
                     <h4 style="font-size: 18px; color: #1e3c72; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
                         <span>🎯</span> MITRE ATT&CK Techniques
                     </h4>
@@ -2600,7 +2744,13 @@ class EnterpriseReportGenerator:
 
                 for technique in mitre_details[:5]:  # Show top 5 techniques
                     similarity = technique.get('similarity', 0)
-                    confidence_color = '#00ff88' if similarity > 85 else '#ffaa00' if similarity > 70 else '#ff8800'
+                    confidence_color = '#3fb950' if similarity > 85 else '#d29922' if similarity > 70 else '#d29922'
+
+                    tech_desc = technique.get('description', '')
+                    desc_html = ''
+                    if tech_desc:
+                        truncated = tech_desc[:200] + '...' if len(tech_desc) > 200 else tech_desc
+                        desc_html = f'<div style="color: #495057; font-size: 12px; margin-top: 5px;">{self._esc(truncated)}</div>'
 
                     html += f"""
                     <div style="background: white; border-radius: 10px; padding: 15px; margin-bottom: 12px; border-left: 4px solid {confidence_color};">
@@ -2608,11 +2758,13 @@ class EnterpriseReportGenerator:
                             {self._esc(str(technique.get('id', 'N/A')))}: {self._esc(str(technique.get('name', 'Unknown')))}
                         </div>
                         <div style="color: #6c757d; font-size: 13px; margin-bottom: 3px;">
-                            <strong>Tactic:</strong> {self._esc(str(technique.get('tactic', 'Unknown')))}
+                            <strong>Tactic:</strong> {self._esc(str(technique.get('tactic', 'Unknown')))} |
+                            <strong>Severity:</strong> {self._esc(str(technique.get('severity', 'N/A')).upper())}
                         </div>
                         <div style="color: {confidence_color}; font-size: 13px; font-weight: 600;">
                             <strong>Confidence:</strong> {similarity:.1f}%
                         </div>
+                        {desc_html}
                     </div>
                     """
 
@@ -2621,7 +2773,7 @@ class EnterpriseReportGenerator:
             # Add mitigation steps
             if breach_info.get('mitigation_steps') and isinstance(breach_info['mitigation_steps'], list):
                 html += """
-                <div style="background: linear-gradient(135deg, #00d4aa, #00ffb8); color: white; border-radius: 15px; padding: 25px; margin-top: 25px;">
+                <div style="background: linear-gradient(135deg, #3fb950, #00ffb8); color: white; border-radius: 15px; padding: 25px; margin-top: 25px;">
                     <h4 style="font-size: 18px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
                         <span>🛡️</span> Recommended Actions
                     </h4>
@@ -2637,15 +2789,15 @@ class EnterpriseReportGenerator:
                 """
 
             # Password breach info (if checked)
-            password_breach = result.get('password_breach', {})
+            password_breach = result.get('password_breach') or {}
             if password_breach and password_breach.get('found'):
                 html += """
-                <div style="background: rgba(255,51,102,0.1); border-radius: 15px; padding: 25px; margin-top: 25px; border: 2px solid #ff3366;">
-                    <h4 style="font-size: 18px; color: #ff3366; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                <div style="background: rgba(248,81,73,0.1); border-radius: 15px; padding: 25px; margin-top: 25px; border: 2px solid #f85149;">
+                    <h4 style="font-size: 18px; color: #f85149; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
                         <span>🔑</span> Password Breach Detected
                     </h4>
                     <p style="color: #333; font-size: 14px; margin-bottom: 10px;">The associated password was found in known dark web breach databases.</p>
-                    <p style="color: #ff3366; font-size: 14px; font-weight: 600;">Recommendation: Change this password immediately on all accounts.</p>
+                    <p style="color: #f85149; font-size: 14px; font-weight: 600;">Recommendation: Change this password immediately on all accounts.</p>
                     <p style="color: #6c757d; font-size: 12px; margin-top: 10px;">Source: XposedOrNot (free dark web monitoring) | Privacy: Keccak-512 + k-anonymity</p>
                 </div>
                 """

@@ -30,15 +30,7 @@ try:
 except ImportError:
     FAISS_AVAILABLE = False
 
-# Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('email_analyzer_ultimate.log'),
-        logging.StreamHandler()
-    ]
-)
+# Library modules should not configure the root logger — main.py owns that
 logger = logging.getLogger(__name__)
 
 # Import module dependencies
@@ -165,6 +157,8 @@ class MitreAttackFramework:
                           'description': 'Phishing through third-party services'},
             'T1598': {'name': 'Phishing for Information', 'tactic': 'Reconnaissance', 'severity': 'medium',
                       'description': 'Phishing to collect information'},
+            'T1583': {'name': 'Acquire Infrastructure', 'tactic': 'Resource Development', 'severity': 'medium',
+                      'description': 'Adversaries acquire infrastructure (domains, servers) for targeting'},
             'T1190': {'name': 'Exploit Public-Facing Application', 'tactic': 'Initial Access', 'severity': 'critical',
                       'description': 'Exploiting internet-facing applications'},
             'T1133': {'name': 'External Remote Services', 'tactic': 'Initial Access', 'severity': 'high',
@@ -262,7 +256,8 @@ class MitreAttackFramework:
         """Find MITRE techniques using semantic search if available"""
         if self.semantic_enabled and self.retriever:
             try:
-                logger.info(f"Searching for techniques matching: '{description[:50]}...'")
+                truncated = description[:50] + ('...' if len(description) > 50 else '')
+                logger.info(f"Searching for techniques matching: '{truncated}'")
 
                 # Encode the query
                 query_embedding = self.retriever.model.encode(
@@ -277,25 +272,35 @@ class MitreAttackFramework:
                 else:
                     query_embedding = np.array(query_embedding).astype(np.float32)
 
+                # L2-normalize query to match corpus embeddings (required for cosine formula)
+                q_norm = np.linalg.norm(query_embedding, axis=1, keepdims=True)
+                q_norm[q_norm == 0] = 1.0
+                query_embedding = query_embedding / q_norm
+
                 # Search using Faiss or numpy
                 if FAISS_AVAILABLE and hasattr(self.retriever.index, 'search'):
-                    distances, indices = self.retriever.index.search(query_embedding,
-                                                                     min(top_k, len(self.retriever.techniques)))
+                    with self.retriever._index_lock:
+                        distances, indices = self.retriever.index.search(query_embedding,
+                                                                         min(top_k, len(self.retriever.techniques)))
                 else:
-                    # Numpy-based search
+                    # Numpy-based search (dot product = cosine similarity for unit vectors)
                     similarities = np.dot(self.retriever.index, query_embedding.T).flatten()
                     indices = np.argsort(similarities)[::-1][:top_k]
-                    distances = 1 - similarities[indices]
+                    # Convert to same scale as FAISS L2: dist = 2*(1 - cosine_sim)
+                    # so the shared formula cosine_sim = 1.0 - dist/2.0 recovers the original
+                    distances = 2.0 * (1.0 - similarities[indices])
                     indices = indices.reshape(1, -1)
                     distances = distances.reshape(1, -1)
 
                 results = []
                 for i in range(len(indices[0])):
-                    if indices[0][i] < len(self.retriever.techniques):
+                    if 0 <= indices[0][i] < len(self.retriever.techniques):
                         technique = self.retriever.techniques[indices[0][i]]
 
                         # Calculate similarity score (0-100)
-                        similarity = max(0, 100 - distances[0][i] * 10)
+                        # FAISS L2-squared distance: 0=identical, ~2=orthogonal, ~4=opposite (unit vectors)
+                        cosine_sim = 1.0 - distances[0][i] / 2.0
+                        similarity = max(0.0, cosine_sim * 100)
 
                         # Get MITRE ID
                         external_refs = technique.get('external_references', [])
@@ -372,41 +377,69 @@ class MitreAttackFramework:
         return results
 
     def map_threat_to_techniques(self, threat_type: str, details: Dict = None) -> List[str]:
-        """Map threats to MITRE techniques using semantic search if available"""
+        """Map threats to MITRE techniques dynamically via semantic search.
+        Falls back to rule-based mapping only when sentence-transformers is unavailable."""
 
-        # Create a detailed description for semantic search
         description = self.create_threat_description(threat_type, details)
 
-        # Try semantic search first
         if self.semantic_enabled:
-            semantic_results = self.find_techniques_by_description(description, top_k=5)
-            if semantic_results:
-                return [r['id'] for r in semantic_results if r['similarity'] > 70]
+            # Fully dynamic: sentence-transformer finds best matching techniques
+            # from 811 MITRE ATT&CK techniques — no hardcoded IDs needed
+            results = self.find_techniques_by_description(description, top_k=5)
+            technique_ids = [r['id'] for r in results if r['similarity'] >= 40]
 
-        # Fallback to rule-based mapping
+            # Context enrichment: additional semantic queries for specific attack vectors
+            if details:
+                extra_queries = []
+                if details.get('uses_attachment'):
+                    extra_queries.append("Spearphishing attachment delivering malicious file via email")
+                if details.get('uses_link'):
+                    extra_queries.append("Spearphishing link directing user to malicious website")
+                if details.get('targets_credentials'):
+                    extra_queries.append("Credential theft stealing passwords and authentication tokens")
+
+                for q in extra_queries:
+                    extra = self.find_techniques_by_description(q, top_k=3)
+                    technique_ids.extend(r['id'] for r in extra if r['similarity'] >= 40)
+
+            return list(set(technique_ids))
+
+        # Offline fallback: rule-based mapping (only when semantic search unavailable)
+        return self._rule_based_mapping(threat_type, details)
+
+    def _rule_based_mapping(self, threat_type: str, details: Dict = None) -> List[str]:
+        """Fallback rule-based mapping when sentence-transformers/FAISS is unavailable"""
         mapping = {
             'phishing': ['T1566', 'T1566.001', 'T1566.002', 'T1598', 'T1204'],
             'spearphishing': ['T1566.001', 'T1566.002', 'T1598'],
             'credential_theft': ['T1078', 'T1110', 'T1555', 'T1539'],
             'malware': ['T1204', 'T1055', 'T1053', 'T1027', 'T1543'],
-            'data_breach': ['T1041', 'T1567', 'T1048', 'T1114'],
+            'data_breach': ['T1041', 'T1567', 'T1048', 'T1114', 'T1078'],
             'ransomware': ['T1486', 'T1490', 'T1027'],
             'exploitation': ['T1190', 'T1068'],
-            'social_engineering': ['T1566', 'T1598', 'T1204.001']
+            'social_engineering': ['T1566', 'T1598', 'T1204.001'],
+            'spam': ['T1566', 'T1598'],
+            'ml_high_risk': ['T1566', 'T1204', 'T1078'],
+            'ml_medium_risk': ['T1566', 'T1204'],
+            'anomaly_detected': ['T1027', 'T1070'],
+            'new_domain': ['T1583', 'T1566'],
+            'suspicious_tld': ['T1583', 'T1566.002'],
+            'disposable_email': ['T1566', 'T1078', 'T1598'],
+            'typosquatting': ['T1566.002', 'T1583', 'T1598'],
+            'invalid_format': [],
         }
 
-        techniques = mapping.get(threat_type, [])
+        techniques = set(mapping.get(threat_type, []))
 
-        # Add context-specific techniques
         if details:
             if details.get('uses_attachment'):
-                techniques.extend(['T1566.001', 'T1204.002'])
+                techniques.update(['T1566.001', 'T1204.002'])
             if details.get('uses_link'):
-                techniques.extend(['T1566.002', 'T1204.001'])
+                techniques.update(['T1566.002', 'T1204.001'])
             if details.get('targets_credentials'):
-                techniques.extend(['T1078', 'T1110', 'T1555'])
+                techniques.update(['T1078', 'T1110', 'T1555'])
 
-        return list(set(techniques))
+        return list(techniques)
 
     def create_threat_description(self, threat_type: str, details: Dict = None) -> str:
         """Create a detailed description for semantic search"""
@@ -415,8 +448,17 @@ class MitreAttackFramework:
             'credential_theft': "Attacker attempts to steal user credentials and authentication information",
             'malware': "Malicious software is deployed to compromise systems and steal data",
             'ransomware': "Encryption malware that locks files and demands payment",
-            'data_breach': "Unauthorized access and exfiltration of sensitive data",
-            'exploitation': "Exploiting vulnerabilities in software or systems"
+            'data_breach': "Email credentials compromised in data breach enabling credential stuffing and account takeover",
+            'exploitation': "Exploiting vulnerabilities in software or systems",
+            'spam': "Unsolicited bulk email campaign potentially used for phishing or malware distribution",
+            'ml_high_risk': "Machine learning detected suspicious email patterns indicating phishing or credential theft",
+            'ml_medium_risk': "Machine learning detected moderately suspicious email patterns",
+            'anomaly_detected': "Anomalous email patterns detected that deviate from normal communication",
+            'new_domain': "Very recently registered domain commonly used for phishing infrastructure",
+            'suspicious_tld': "Domain uses a suspicious top-level domain associated with abuse and phishing",
+            'disposable_email': "Temporary disposable email address used to avoid accountability and detection",
+            'typosquatting': "Domain impersonates a legitimate organization through character substitution or misspelling",
+            'invalid_format': "Malformed email address that may indicate automated attack tools",
         }
 
         base_desc = descriptions.get(threat_type, f"Security threat involving {threat_type}")

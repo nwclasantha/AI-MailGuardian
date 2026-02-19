@@ -12,15 +12,7 @@ from collections import Counter
 # Configure logging
 warnings.filterwarnings('ignore')
 
-# Setup enhanced logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('email_analyzer_ultimate.log'),
-        logging.StreamHandler()
-    ]
-)
+# Library modules should not configure the root logger — main.py owns that
 logger = logging.getLogger(__name__)
 
 # Python 3.13 compatibility check
@@ -37,6 +29,7 @@ from .MachineLearningEngine import MachineLearningEngine
 from .ThreatIntelligenceEngine import ThreatIntelligenceEngine
 from .DisposableEmailDetector import DisposableEmailDetector
 from .TyposquattingDetector import TyposquattingDetector
+from .DGADetector import DGADetector
 
 
 class EmailSecurityAnalyzer:
@@ -49,8 +42,8 @@ class EmailSecurityAnalyzer:
         self.threat_intel = ThreatIntelligenceEngine(config)
         self.disposable_detector = DisposableEmailDetector()
         self.typosquat_detector = TyposquattingDetector()
+        self.dga_detector = DGADetector()
         self.analysis_cache = {}
-        self._last_features = None  # Store for feedback loop
 
     def analyze_email(
         self,
@@ -83,11 +76,17 @@ class EmailSecurityAnalyzer:
             'mitre_techniques': [],
             'dns_security': {},
             'domain_reputation': {},
+            'dnsbl': {},
+            'cert_transparency': {},
+            'gravatar': {},
+            'threatfox': {},
+            'parked_domain': {},
+            'dga_analysis': {},
             'recommendations': [],
             'detailed_analysis': {}
         }
 
-        # RFC 5321: max email length is 254 characters
+        # Practical email length limit (RFC 5321 specifies 254, we allow up to 320 for edge cases)
         if len(email_address) > 320:
             result['risk_score'] = 100
             result['risk_level'] = 'critical'
@@ -126,13 +125,26 @@ class EmailSecurityAnalyzer:
         if enable_ml is not None:
             ml_enabled = ml_enabled and bool(enable_ml)
 
+        dnsbl_enabled = deep_scan and bool(getattr(self.config, 'enable_dnsbl', True))
+        cert_ct_enabled = deep_scan and bool(getattr(self.config, 'enable_cert_transparency', True))
+        gravatar_enabled = deep_scan and bool(getattr(self.config, 'enable_gravatar_check', True))
+        threatfox_enabled = deep_scan and bool(getattr(self.config, 'enable_threatfox', True))
+        parked_enabled = deep_scan and bool(getattr(self.config, 'enable_parked_detection', True))
+        dga_enabled = bool(getattr(self.config, 'enable_dga_detection', True))
+
         result['analysis_flags'] = {
             'threat_intel': threat_intel_enabled,
             'deep_scan': deep_scan,
             'dns': dns_enabled,
             'whois': whois_enabled,
             'breach': breach_enabled,
-            'ml': ml_enabled
+            'ml': ml_enabled,
+            'dnsbl': dnsbl_enabled,
+            'cert_transparency': cert_ct_enabled,
+            'gravatar': gravatar_enabled,
+            'threatfox': threatfox_enabled,
+            'parked_detection': parked_enabled,
+            'dga_detection': dga_enabled,
         }
 
         # Run network lookups in parallel for speed
@@ -173,11 +185,61 @@ class EmailSecurityAnalyzer:
                 logger.debug(f"Password breach check failed: {e}")
                 return {'found': False, 'details': 'Password breach check failed', 'recommendation': ''}
 
-        with ThreadPoolExecutor(max_workers=4) as executor:
+        def _check_dnsbl():
+            if not dnsbl_enabled:
+                return {}
+            try:
+                return self.threat_intel.check_dnsbl(domain, enabled=True)
+            except Exception as e:
+                logger.debug(f"DNSBL check failed: {e}")
+                return {}
+
+        def _check_cert_transparency():
+            if not cert_ct_enabled:
+                return {}
+            try:
+                return self.threat_intel.check_cert_transparency(domain, enabled=True)
+            except Exception as e:
+                logger.debug(f"Certificate transparency check failed: {e}")
+                return {}
+
+        def _check_gravatar():
+            if not gravatar_enabled:
+                return {}
+            try:
+                return self.threat_intel.check_gravatar(email_address, enabled=True)
+            except Exception as e:
+                logger.debug(f"Gravatar check failed: {e}")
+                return {}
+
+        def _check_threatfox():
+            if not threatfox_enabled:
+                return {}
+            try:
+                return self.threat_intel.check_threatfox(domain, enabled=True)
+            except Exception as e:
+                logger.debug(f"ThreatFox check failed: {e}")
+                return {}
+
+        def _check_parked():
+            if not parked_enabled:
+                return {}
+            try:
+                return self.threat_intel.check_parked_domain(domain, enabled=True)
+            except Exception as e:
+                logger.debug(f"Parked domain check failed: {e}")
+                return {}
+
+        with ThreadPoolExecutor(max_workers=10) as executor:
             fut_domain = executor.submit(_check_domain_reputation)
             fut_dns = executor.submit(_check_dns)
             fut_breach = executor.submit(_check_breach)
             fut_password = executor.submit(_check_password)
+            fut_dnsbl = executor.submit(_check_dnsbl)
+            fut_cert = executor.submit(_check_cert_transparency)
+            fut_gravatar = executor.submit(_check_gravatar)
+            fut_threatfox = executor.submit(_check_threatfox)
+            fut_parked = executor.submit(_check_parked)
 
             # Timeouts prevent indefinite hangs if network calls get stuck
             try:
@@ -199,12 +261,41 @@ class EmailSecurityAnalyzer:
                 result['password_breach'] = fut_password.result(timeout=12)
             except Exception:
                 result['password_breach'] = {'found': False, 'details': '', 'recommendation': ''}
+            try:
+                result['dnsbl'] = fut_dnsbl.result(timeout=15)
+            except Exception:
+                result['dnsbl'] = {}
+            try:
+                result['cert_transparency'] = fut_cert.result(timeout=12)
+            except Exception:
+                result['cert_transparency'] = {}
+            try:
+                result['gravatar'] = fut_gravatar.result(timeout=8)
+            except Exception:
+                result['gravatar'] = {}
+            try:
+                result['threatfox'] = fut_threatfox.result(timeout=12)
+            except Exception:
+                result['threatfox'] = {}
+            try:
+                result['parked_domain'] = fut_parked.result(timeout=8)
+            except Exception:
+                result['parked_domain'] = {}
 
         # Keep both keys for backwards compatibility
-        result['breaches'] = result.get('breach_info', {})
+        result['breaches'] = result.get('breach_info') or {}
+
+        # DGA detection (local, fast — no network call needed)
+        if dga_enabled:
+            try:
+                result['dga_analysis'] = self.dga_detector.check_domain(domain)
+            except Exception as e:
+                logger.debug(f"DGA detection failed: {e}")
+                result['dga_analysis'] = {}
 
         features = self.extract_features(email_address, domain, result)
         result['_ml_features'] = features  # Store per-result for feedback loop
+        result['_ml_ensemble_score'] = 0.5  # Default; updated after prediction
         if ml_enabled:
             try:
                 result['ml_predictions'] = self.ml_engine.predict_ensemble(features)
@@ -216,6 +307,7 @@ class EmailSecurityAnalyzer:
                 }
         else:
             result['ml_predictions'] = {'ensemble': 0.5}
+        result['_ml_ensemble_score'] = result['ml_predictions'].get('ensemble', 0.5)
 
         # Always compute threats/risk/recommendations (even in fast mode)
         self.analyze_threats(result, email_address, domain)
@@ -268,7 +360,7 @@ class EmailSecurityAnalyzer:
         features.append(1 if domain.startswith('www.') else 0)
         features.append(len(domain.split('.')[-1]))
         features.append(1 if domain.endswith(('.tk', '.ml', '.ga', '.cf')) else 0)
-        dom_rep = analysis.get('domain_reputation', {}) or {}
+        dom_rep = analysis.get('domain_reputation') or {}
         dom_age = dom_rep.get('age', None)
         dom_score = dom_rep.get('score', 50)
 
@@ -289,7 +381,7 @@ class EmailSecurityAnalyzer:
         features.append(1 if 'phishing' in (analysis.get('domain_reputation') or {}).get('flags', []) else 0)
 
         # --- DNS features (6) ---
-        dns = analysis.get('dns_security', {})
+        dns = analysis.get('dns_security') or {}
         features.append(1 if dns.get('spf') else 0)
         features.append(1 if dns.get('dmarc') else 0)
         features.append(1 if dns.get('dkim') else 0)
@@ -298,8 +390,8 @@ class EmailSecurityAnalyzer:
         features.append(len(dns.get('issues', [])))
 
         # --- Breach features (3) ---
-        features.append(1 if analysis.get('breaches', {}).get('found') else 0)
-        breach_count = analysis.get('breaches', {}).get('count', 0)
+        features.append(1 if (analysis.get('breaches') or {}).get('found') else 0)
+        breach_count = (analysis.get('breaches') or {}).get('count', 0)
         try:
             breach_count = int(breach_count) if breach_count is not None else 0
         except (TypeError, ValueError):
@@ -314,11 +406,11 @@ class EmailSecurityAnalyzer:
         features.append(dns_score)
 
         # --- DNS extra (1) ---
-        features.append(1 if dns.get('records', {}).get('a') else 0)
+        features.append(1 if (dns.get('records') or {}).get('a') else 0)
 
         # --- Pattern features (10) ---
         suspicious_words = ['admin', 'security', 'update', 'verify', 'suspend', 'urgent', 'click', 'winner']
-        features.append(sum(1 for word in suspicious_words if word in email.lower()))
+        features.append(sum(1 for word in suspicious_words if word in local_part.lower()))
         features.append(sum(1 for word in suspicious_words if word in domain.lower()))
         features.append(1 if re.search(r'\d{4,}', local_part) else 0)
         features.append(1 if re.search(r'[A-Z]{5,}', local_part) else 0)
@@ -340,7 +432,6 @@ class EmailSecurityAnalyzer:
         features.append(1 if self.typosquat_detector.is_free_email_provider(domain) else 0)
 
         result = np.array(features, dtype=np.float64)
-        self._last_features = result  # Store for feedback loop
         return result
 
     def analyze_threats(self, result: Dict, email: str, domain: str):
@@ -371,8 +462,8 @@ class EmailSecurityAnalyzer:
                 'confidence': 0.8
             })
 
-        dns = result.get('dns_security', {})
-        dns_checked = result.get('analysis_flags', {}).get('dns', True)
+        dns = result.get('dns_security') or {}
+        dns_checked = result.get('analysis_flags', {}).get('dns', False)
         if dns_checked:
             if not dns.get('spf'):
                 result['vulnerabilities'].append({
@@ -398,7 +489,7 @@ class EmailSecurityAnalyzer:
                     'remediation': 'Enable DNSSEC for the domain'
                 })
 
-        ml_preds = result.get('ml_predictions', {})
+        ml_preds = result.get('ml_predictions') or {}
         ml_score = ml_preds.get('ensemble', 0.5)
         # Use the model's precision-optimized threshold (is_malicious flag)
         # Require corroboration for moderate scores; allow standalone only for very high scores
@@ -439,9 +530,9 @@ class EmailSecurityAnalyzer:
                 'confidence': anomaly_score
             })
 
-        breaches = result.get('breaches', {})
+        breaches = result.get('breaches') or {}
         if breaches.get('found'):
-            severity = breaches.get('severity', 'medium')
+            severity = breaches.get('severity') or 'medium'
             result['threats'].append({
                 'type': 'data_breach',
                 'description': f'Email found in {breaches.get("count", 0)} data breach(es)',
@@ -466,8 +557,7 @@ class EmailSecurityAnalyzer:
                 'confidence': 0.7
             })
 
-        # Disposable email detection
-        domain = email.split('@')[1].lower() if '@' in email else ''
+        # Disposable email detection (domain already set from function parameter)
         if domain and self.disposable_detector.is_disposable(domain):
             result['threats'].append({
                 'type': 'disposable_email',
@@ -490,50 +580,142 @@ class EmailSecurityAnalyzer:
                 })
             result['typosquat_info'] = typosquat_result
 
+        # DNSBL blacklist detection
+        dnsbl = result.get('dnsbl') or {}
+        if dnsbl.get('listed'):
+            listed_count = dnsbl.get('listed_count', 0)
+            result['threats'].append({
+                'type': 'dnsbl_listed',
+                'description': f'Domain mail server listed in {listed_count} DNS blacklist(s)',
+                'severity': 'high',
+                'confidence': 0.9
+            })
+
+        # ThreatFox IOC detection
+        threatfox = result.get('threatfox') or {}
+        if threatfox.get('found'):
+            ioc_count = threatfox.get('ioc_count', 0)
+            malware_names = [ioc.get('malware', '') for ioc in threatfox.get('iocs', [])[:3] if ioc.get('malware')]
+            malware_str = ', '.join(malware_names) if malware_names else 'unknown'
+            result['threats'].append({
+                'type': 'threatfox_ioc',
+                'description': f'Domain found in ThreatFox IOC database ({ioc_count} IOC(s): {malware_str})',
+                'severity': 'critical',
+                'confidence': 0.95
+            })
+
+        # DGA detection
+        dga = result.get('dga_analysis') or {}
+        if dga.get('is_dga'):
+            result['threats'].append({
+                'type': 'dga_detected',
+                'description': f'Domain name appears algorithmically generated (DGA score: {float(dga.get("dga_score") or 0):.2f})',
+                'severity': 'high',
+                'confidence': float(dga.get('dga_score') or 0.65)
+            })
+
+        # Parked domain detection
+        parked = result.get('parked_domain') or {}
+        if parked.get('is_parked'):
+            result['threats'].append({
+                'type': 'parked_domain',
+                'description': 'Domain appears to be parked or for sale',
+                'severity': 'medium',
+                'confidence': 0.7
+            })
+
+        # Additional DNS vulnerabilities
+        if dns_checked:
+            dns_data = result.get('dns_security') or {}
+            if not dns_data.get('bimi'):
+                result['vulnerabilities'].append({
+                    'type': 'missing_bimi',
+                    'description': 'No BIMI record - no verified brand indicator for email',
+                    'severity': 'low',
+                    'remediation': 'Configure BIMI record for brand verification'
+                })
+            if not dns_data.get('mta_sts'):
+                result['vulnerabilities'].append({
+                    'type': 'missing_mta_sts',
+                    'description': 'No MTA-STS policy - email transport not enforcing TLS',
+                    'severity': 'low',
+                    'remediation': 'Implement MTA-STS policy for enforced TLS'
+                })
+            if not dns_data.get('tls_rpt'):
+                result['vulnerabilities'].append({
+                    'type': 'missing_tls_rpt',
+                    'description': 'No TLS-RPT policy - no reporting for mail transport failures',
+                    'severity': 'low',
+                    'remediation': 'Implement TLS-RPT policy for transport security visibility'
+                })
+
     def map_to_mitre(self, result: Dict):
-        """Map threats to MITRE ATT&CK using enhanced semantic mapping"""
+        """Map threats to MITRE ATT&CK — fully dynamic via semantic search,
+        rule-based fallback only when sentence-transformers unavailable."""
         techniques = []
         technique_details = []
+        seen_ids = set()
 
-        # Use semantic mapping if available
         if self.mitre.semantic_enabled:
-            # Create comprehensive threat description
+            # --- Fully dynamic: sentence-transformer maps threats to 811 MITRE techniques ---
+
+            # 1) Overall semantic search with combined threat description
             threat_description = self.create_threat_description(result)
-
-            # Find semantically similar techniques
-            semantic_techniques = self.mitre.find_techniques_by_description(threat_description, top_k=5)
-
-            for tech in semantic_techniques:
-                if tech['similarity'] > 70:  # Only include high-confidence matches
-                    techniques.append(tech['id'])
-                    technique_details.append({
-                        'id': tech['id'],
-                        'name': tech['name'],
-                        'tactic': tech['tactic'],
-                        'severity': tech['severity'],
-                        'description': tech['description'],
-                        'similarity': tech['similarity']
-                    })
-
-        # Also use rule-based mapping for completeness
-        for threat in result.get('threats', []):
-            threat_techniques = self.mitre.map_threat_to_techniques(threat['type'])
-            techniques.extend(threat_techniques)
-
-            for tech_id in threat_techniques:
-                if tech_id not in [t['id'] for t in technique_details]:
-                    tech_info = self.mitre.get_technique_details(tech_id)
-                    if tech_info:
+            if threat_description.strip():
+                semantic_techniques = self.mitre.find_techniques_by_description(threat_description, top_k=5)
+                for tech in semantic_techniques:
+                    if tech['similarity'] > 40 and tech['id'] not in seen_ids:
+                        seen_ids.add(tech['id'])
+                        techniques.append(tech['id'])
                         technique_details.append({
-                            'id': tech_id,
-                            'name': tech_info.get('name'),
-                            'tactic': tech_info.get('tactic'),
-                            'severity': tech_info.get('severity'),
-                            'description': tech_info.get('description'),
-                            'similarity': 100  # Rule-based match
+                            'id': tech['id'],
+                            'name': tech['name'],
+                            'tactic': tech['tactic'],
+                            'severity': tech['severity'],
+                            'description': tech['description'],
+                            'similarity': tech['similarity']
                         })
 
+            # 2) Per-threat semantic search for targeted results
+            for threat in result.get('threats', []):
+                desc = threat.get('description', '')
+                if desc:
+                    per_threat_results = self.mitre.find_techniques_by_description(desc, top_k=3)
+                    for tech in per_threat_results:
+                        if tech['similarity'] > 40 and tech['id'] not in seen_ids:
+                            seen_ids.add(tech['id'])
+                            techniques.append(tech['id'])
+                            technique_details.append({
+                                'id': tech['id'],
+                                'name': tech['name'],
+                                'tactic': tech['tactic'],
+                                'severity': tech['severity'],
+                                'description': tech['description'],
+                                'similarity': tech['similarity']
+                            })
+
+        else:
+            # --- Offline fallback: rule-based mapping (no sentence-transformers) ---
+            for threat in result.get('threats', []):
+                threat_techniques = self.mitre.map_threat_to_techniques(threat['type'])
+                for tech_id in threat_techniques:
+                    if tech_id not in seen_ids:
+                        seen_ids.add(tech_id)
+                        techniques.append(tech_id)
+                        tech_info = self.mitre.get_technique_details(tech_id)
+                        if tech_info:
+                            technique_details.append({
+                                'id': tech_id,
+                                'name': tech_info.get('name'),
+                                'tactic': tech_info.get('tactic'),
+                                'severity': tech_info.get('severity'),
+                                'description': tech_info.get('description'),
+                                'similarity': 100  # Rule-based match
+                            })
+
         result['mitre_techniques'] = list(set(techniques))
+        # Sort by similarity descending so reports show most relevant first
+        technique_details.sort(key=lambda t: t.get('similarity', 0), reverse=True)
         result['mitre_details'] = technique_details
 
     def create_threat_description(self, result: Dict) -> str:
@@ -547,7 +729,7 @@ class EmailSecurityAnalyzer:
             descriptions.append(vulnerability.get('description', ''))
 
         # Enhanced breach description for better MITRE mapping
-        breach_info = result.get('breach_info', {})
+        breach_info = result.get('breach_info') or {}
         if breach_info.get('found'):
             breach_count = breach_info.get('count', 0)
             severity = breach_info.get('severity', 'medium')
@@ -571,10 +753,10 @@ class EmailSecurityAnalyzer:
             descriptions.append(breach_desc)
 
         # Keep backward compatibility
-        if result.get('breaches', {}).get('found') and not breach_info.get('found'):
+        if (result.get('breaches') or {}).get('found') and not breach_info.get('found'):
             descriptions.append("Credentials potentially compromised in data breach")
 
-        domain_rep = result.get('domain_reputation', {})
+        domain_rep = result.get('domain_reputation') or {}
         if domain_rep.get('flags'):
             descriptions.append(f"Domain has indicators: {', '.join(str(f) for f in domain_rep['flags'])}")
 
@@ -585,19 +767,20 @@ class EmailSecurityAnalyzer:
         import math
         score = 0
 
-        if result['breaches'].get('found'):
-            breach_count = result['breaches'].get('count', 0)
+        if (result.get('breaches') or {}).get('found'):
+            breach_count = (result.get('breaches') or {}).get('count', 0)
             score += min(breach_count * 5, 25)
 
-        if result.get('password_breach', {}).get('found'):
+        if (result.get('password_breach') or {}).get('found'):
             score += 20
 
-        for threat in result.get('threats', []):
-            if threat['severity'] == 'critical':
+        for threat in (result.get('threats') or []):
+            sev = threat.get('severity', 'low')
+            if sev == 'critical':
                 score += 15
-            elif threat['severity'] == 'high':
+            elif sev == 'high':
                 score += 10
-            elif threat['severity'] == 'medium':
+            elif sev == 'medium':
                 score += 5
             else:
                 score += 2
@@ -611,22 +794,35 @@ class EmailSecurityAnalyzer:
         flags = result.get('analysis_flags', {}) or {}
 
         if flags.get('threat_intel', True):
-            rep_score = to_float(result.get('domain_reputation', {}).get('score', 50), 50.0)
+            rep_score = to_float((result.get('domain_reputation') or {}).get('score', 50), 50.0)
             if not math.isnan(rep_score):
                 score += int((50 - rep_score) * 0.4)
 
-        if flags.get('dns', True):
-            dns_score = to_float(result.get('dns_security', {}).get('score', 0), 0.0)
+        if flags.get('dns', False):
+            dns_score = to_float((result.get('dns_security') or {}).get('score', 0), 0.0)
             if not math.isnan(dns_score):
                 score += int((100 - dns_score) * 0.1)
 
         if flags.get('ml', True):
-            ml_score = to_float(result.get('ml_predictions', {}).get('ensemble', 0.5), 0.5)
+            ml_score = to_float((result.get('ml_predictions') or {}).get('ensemble', 0.5), 0.5)
             if not math.isnan(ml_score):
                 # Only add ML-based risk when model is confident AND corroborated
                 # Subtract 0.5 baseline so neutral predictions add 0 risk
                 ml_risk = max(0.0, ml_score - 0.5) * 2  # Scale 0.5-1.0 → 0.0-1.0
                 score += int(ml_risk * 15)  # 15% max ML weight (conservative for synthetic-trained model)
+
+        # Advanced check signals
+        if (result.get('dnsbl') or {}).get('listed'):
+            score += 15
+
+        if (result.get('threatfox') or {}).get('found'):
+            score += 20
+
+        if (result.get('dga_analysis') or {}).get('is_dga'):
+            score += 10
+
+        if (result.get('parked_domain') or {}).get('is_parked'):
+            score += 5
 
         return max(0, min(score, 100))
 
@@ -670,16 +866,16 @@ class EmailSecurityAnalyzer:
                 "🔒 Consider enabling 2FA for added security"
             ])
 
-        if result['breaches'].get('found'):
-            count = result['breaches']['count']
+        if (result.get('breaches') or {}).get('found'):
+            count = (result.get('breaches') or {}).get('count', 0)
             recommendations.append(f"📚 Email found in {count} data breach(es) - change all passwords")
 
-        if result.get('password_breach', {}).get('found'):
+        if (result.get('password_breach') or {}).get('found'):
             recommendations.append("🔑 CRITICAL: The checked password was found in breach databases - stop using it immediately")
             recommendations.append("🔐 Generate a new unique password using a password manager")
 
-        dns = result.get('dns_security', {})
-        dns_checked = result.get('analysis_flags', {}).get('dns', True)
+        dns = result.get('dns_security') or {}
+        dns_checked = result.get('analysis_flags', {}).get('dns', False)
         if dns_checked:
             if not dns.get('spf'):
                 recommendations.append("📧 Domain lacks SPF record - contact domain administrator")
@@ -687,14 +883,14 @@ class EmailSecurityAnalyzer:
             if not dns.get('dmarc'):
                 recommendations.append("🛡️ No DMARC policy - email authentication is limited")
 
-        dom_rep = result.get('domain_reputation', {})
+        dom_rep = result.get('domain_reputation') or {}
         if 'very_new_domain' in (dom_rep.get('flags') or []):
             recommendations.append("🆕 Very new domain - exercise extra caution")
 
         if 'suspicious_tld' in (dom_rep.get('flags') or []):
             recommendations.append("⚠️ Suspicious domain extension - verify legitimacy")
 
-        ml_score = result.get('ml_predictions', {}).get('ensemble', 0.5)
+        ml_score = (result.get('ml_predictions') or {}).get('ensemble', 0.5)
         if ml_score > 0.7:
             recommendations.append("🤖 AI models detect high risk patterns - be extremely cautious")
 
@@ -704,6 +900,28 @@ class EmailSecurityAnalyzer:
             if high_confidence_techniques:
                 recommendations.append(
                     f"🎯 MITRE ATT&CK: {len(high_confidence_techniques)} techniques identified - review security posture")
+
+        # Advanced check recommendations
+        if (result.get('dnsbl') or {}).get('listed'):
+            count = (result.get('dnsbl') or {}).get('listed_count', 0)
+            recommendations.append(f"🚫 Domain mail server is blacklisted in {count} DNSBL(s) - emails may be blocked")
+
+        if (result.get('threatfox') or {}).get('found'):
+            recommendations.append("☠️ Domain found in ThreatFox IOC database - do NOT interact with emails from this domain")
+
+        if (result.get('dga_analysis') or {}).get('is_dga'):
+            recommendations.append("🤖 Domain name appears algorithmically generated (possible malware C2) - exercise extreme caution")
+
+        if (result.get('parked_domain') or {}).get('is_parked'):
+            recommendations.append("🅿️ Domain appears to be parked/for sale - unlikely to be a legitimate sender")
+
+        if not (result.get('gravatar') or {}).get('has_profile'):
+            if risk_level in ('high', 'critical'):
+                recommendations.append("👤 No Gravatar profile found - may indicate a throwaway or fake account")
+
+        dns_data = result.get('dns_security') or {}
+        if dns_checked and dns_data and not dns_data.get('mta_sts'):
+            recommendations.append("🔐 Domain lacks MTA-STS policy - email transport may not enforce TLS encryption")
 
         return recommendations
 
@@ -722,18 +940,18 @@ class EmailSecurityAnalyzer:
             'risk_score': result['risk_score'],
             'total_threats': len(result.get('threats', [])),
             'total_vulnerabilities': len(result.get('vulnerabilities', [])),
-            'breach_status': 'COMPROMISED' if result['breaches'].get('found') else 'CLEAN',
-            'domain_trust': result.get('domain_reputation', {}).get('category', 'unknown')
+            'breach_status': 'COMPROMISED' if (result.get('breaches') or {}).get('found') else 'CLEAN',
+            'domain_trust': (result.get('domain_reputation') or {}).get('category', 'unknown')
         }
 
         analysis['technical_details'] = {
-            'domain_age_days': result.get('domain_reputation', {}).get('age'),
-            'dns_security_score': result.get('dns_security', {}).get('score', 0),
-            'ml_confidence': result.get('ml_predictions', {}).get('ensemble', 0.5),
+            'domain_age_days': (result.get('domain_reputation') or {}).get('age'),
+            'dns_security_score': (result.get('dns_security') or {}).get('score', 0),
+            'ml_confidence': (result.get('ml_predictions') or {}).get('ensemble', 0.5),
             'mitre_techniques_count': len(result.get('mitre_techniques', []))
         }
 
-        threat_counts = Counter(t['severity'] for t in result.get('threats', []))
+        threat_counts = Counter(t.get('severity', 'low') for t in (result.get('threats') or []))
         analysis['threat_analysis'] = {
             'critical_threats': threat_counts.get('critical', 0),
             'high_threats': threat_counts.get('high', 0),
@@ -741,7 +959,7 @@ class EmailSecurityAnalyzer:
             'low_threats': threat_counts.get('low', 0)
         }
 
-        dns = result.get('dns_security', {})
+        dns = result.get('dns_security') or {}
         analysis['security_posture'] = {
             'email_authentication': {
                 'spf': dns.get('spf', False),
@@ -753,8 +971,8 @@ class EmailSecurityAnalyzer:
                 'mx_records': dns.get('mx', False)
             },
             'domain_reputation': {
-                'score': result.get('domain_reputation', {}).get('score', 0),
-                'flags': result.get('domain_reputation', {}).get('flags', [])
+                'score': (result.get('domain_reputation') or {}).get('score', 0),
+                'flags': (result.get('domain_reputation') or {}).get('flags', [])
             }
         }
 
@@ -769,20 +987,36 @@ class EmailSecurityAnalyzer:
                                             for t in result.get('mitre_details', [])))
             }
 
+        # Advanced security checks summary
+        analysis['advanced_checks'] = {
+            'dnsbl_listed': (result.get('dnsbl') or {}).get('listed', False),
+            'dnsbl_count': (result.get('dnsbl') or {}).get('listed_count', 0),
+            'cert_transparency': (result.get('cert_transparency') or {}).get('found', False),
+            'cert_count': (result.get('cert_transparency') or {}).get('cert_count', 0),
+            'gravatar_profile': (result.get('gravatar') or {}).get('has_profile', False),
+            'threatfox_found': (result.get('threatfox') or {}).get('found', False),
+            'threatfox_iocs': (result.get('threatfox') or {}).get('ioc_count', 0),
+            'parked_domain': (result.get('parked_domain') or {}).get('is_parked', False),
+            'dga_detected': (result.get('dga_analysis') or {}).get('is_dga', False),
+            'dga_score': (result.get('dga_analysis') or {}).get('dga_score', 0.0),
+            'bimi': (result.get('dns_security') or {}).get('bimi', False),
+            'mta_sts': (result.get('dns_security') or {}).get('mta_sts', False),
+            'tls_rpt': (result.get('dns_security') or {}).get('tls_rpt', False),
+        }
+
         return analysis
 
-    def submit_feedback(self, email: str, user_label: int, features=None):
+    def submit_feedback(self, email: str, user_label: int, features=None, ensemble_score: float = 0.5):
         """Submit user feedback for ML retraining.
 
         Args:
             email: The email address that was analyzed
             user_label: 0=safe, 1=malicious
             features: The ML feature array for this specific email (avoids race conditions)
+            ensemble_score: The ML ensemble score for this specific result (avoids stale prediction_history)
         """
-        feedback_features = features if features is not None else self._last_features
-        if feedback_features is not None and self.ml_engine:
-            ensemble_score = 0.5
-            if hasattr(self.ml_engine, 'prediction_history') and self.ml_engine.prediction_history:
-                last_pred = self.ml_engine.prediction_history[-1]
-                ensemble_score = last_pred.get('predictions', {}).get('ensemble', 0.5)
-            self.ml_engine.submit_feedback(email, feedback_features, ensemble_score, user_label)
+        if features is None:
+            logger.warning("submit_feedback called without features — skipping")
+            return
+        if self.ml_engine:
+            self.ml_engine.submit_feedback(email, features, ensemble_score, user_label)

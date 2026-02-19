@@ -47,15 +47,7 @@ try:
 except ImportError:
     XGBOOST_AVAILABLE = False
 
-# Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('email_analyzer_ultimate.log'),
-        logging.StreamHandler()
-    ]
-)
+# Library modules should not configure the root logger — main.py owns that
 logger = logging.getLogger(__name__)
 
 from .ApplicationConfig import ApplicationConfig
@@ -141,12 +133,19 @@ class MachineLearningEngine:
         self.scaler = StandardScaler()
         self.is_initialized = True
 
-    def _initialize_models(self):
-        """Create the two core models."""
+    def _initialize_models(self, local_only=False):
+        """Create the two core models.
+
+        Args:
+            local_only: If True, return fresh models dict without writing to self.models.
+                        Used during retrain to avoid exposing unfitted models to predict_ensemble.
+        """
         logger.info("Initializing ML models (Random Forest + XGBoost)...")
 
+        fresh_models = {}
+
         # Random Forest — good for tabular data, natively handles feature importance
-        self.models['random_forest'] = RandomForestClassifier(
+        fresh_models['random_forest'] = RandomForestClassifier(
             n_estimators=200,
             max_depth=12,
             min_samples_split=5,
@@ -159,7 +158,7 @@ class MachineLearningEngine:
 
         # XGBoost — best gradient boosting for tabular data
         if XGBOOST_AVAILABLE:
-            self.models['xgboost'] = xgb.XGBClassifier(
+            fresh_models['xgboost'] = xgb.XGBClassifier(
                 n_estimators=200,
                 max_depth=6,
                 learning_rate=0.1,
@@ -176,10 +175,19 @@ class MachineLearningEngine:
         else:
             logger.warning("XGBoost not available — using only Random Forest")
 
+        if local_only:
+            # Return fresh models without writing to self — used during retrain
+            # to avoid exposing unfitted models to concurrent predict_ensemble calls
+            logger.info(f"Created {len(fresh_models)} fresh models for training")
+            return fresh_models
+
+        # Normal initialization: write to self
+        self.models = fresh_models
+
         # Isolation Forest — unsupervised anomaly detector
         self.anomaly_detector = IsolationForest(
             n_estimators=200,
-            contamination=0.1,  # Expect ~10% anomalies
+            contamination='auto',
             max_features=1.0,
             random_state=42,
             n_jobs=-1
@@ -210,6 +218,9 @@ class MachineLearningEngine:
                 self.model_metrics = saved.get('metrics', {})
                 self.model_weights = saved.get('weights', {})
                 self.precision_threshold = saved.get('precision_threshold', 0.5)
+                if 'anomaly_detector' in saved:
+                    self.anomaly_detector = saved['anomaly_detector']
+                    self.anomaly_fitted = saved.get('anomaly_fitted', False)
                 logger.info(f"Loaded v2 models (threshold={self.precision_threshold:.4f})")
                 return
             except Exception as e:
@@ -226,9 +237,16 @@ class MachineLearningEngine:
         start = time.time()
 
         try:
-            # Always reinitialize raw models (CalibratedClassifierCV wrappers
-            # from previous training can't be re-tuned with RandomizedSearchCV)
-            self._initialize_models()
+            # Snapshot old anomaly detector under lock (fallback if IF training fails)
+            with self._model_lock:
+                old_anomaly_detector = self.anomaly_detector
+                old_anomaly_fitted = self.anomaly_fitted
+
+            # Always create fresh raw models locally (CalibratedClassifierCV wrappers
+            # from previous training can't be re-tuned with RandomizedSearchCV).
+            # Use local_only=True to avoid writing unfitted models to self.models,
+            # which would expose them to concurrent predict_ensemble calls.
+            fresh_models = self._initialize_models(local_only=True)
 
             # Generate or load training data
             X, y = self._get_training_data()
@@ -237,9 +255,15 @@ class MachineLearningEngine:
             X_train, X_temp, y_train, y_temp = train_test_split(
                 X, y, test_size=0.30, random_state=42, stratify=y
             )
-            X_cal, X_test, y_cal, y_test = train_test_split(
-                X_temp, y_temp, test_size=0.50, random_state=42, stratify=y_temp
-            )
+            try:
+                X_cal, X_test, y_cal, y_test = train_test_split(
+                    X_temp, y_temp, test_size=0.50, random_state=42, stratify=y_temp
+                )
+            except ValueError:
+                # Fallback without stratify when one class has too few members
+                X_cal, X_test, y_cal, y_test = train_test_split(
+                    X_temp, y_temp, test_size=0.50, random_state=42
+                )
 
             # Scale features into local variable (swap atomically later)
             new_scaler = StandardScaler()
@@ -249,7 +273,7 @@ class MachineLearningEngine:
 
             # Train each model with hyperparameter search
             calibrated_models = {}
-            for name, model in list(self.models.items()):
+            for name, model in fresh_models.items():
                 try:
                     logger.info(f"Training {name} with hyperparameter search...")
                     best_model = self._tune_and_train(name, model, X_train_s, y_train)
@@ -272,32 +296,69 @@ class MachineLearningEngine:
                         'f1_score': 0.0, 'confusion_matrix': {'tn': 0, 'fp': 0, 'fn': 0, 'tp': 0}
                     }
 
-            self.models = calibrated_models
+            # Compute weights and threshold into local vars (before atomic swap)
+            new_models = calibrated_models
 
-            # Compute performance-based weights
-            self._compute_model_weights()
+            # If all models failed to train, abort — keep existing models
+            if not new_models:
+                logger.error("All models failed to train — keeping existing models unchanged")
+                return
 
-            # Find precision-optimized threshold
-            self._optimize_threshold(X_test_s, y_test)
+            # Compute performance-based weights only from models that trained this round
+            new_weights = {}
+            total_f1 = 0.0
+            for name in new_models:
+                f1 = self.model_metrics.get(name, {}).get('f1_score', 0.0)
+                new_weights[name] = f1
+                total_f1 += f1
+            if total_f1 > 0:
+                for name in new_weights:
+                    new_weights[name] /= total_f1
+            else:
+                n = len(new_weights)
+                for name in new_weights:
+                    new_weights[name] = 1.0 / n if n > 0 else 1.0
+            logger.info(f"Ensemble weights: {new_weights}")
+
+            # Find precision-optimized threshold using new models/weights
+            # (pass explicitly to avoid writing self.models before atomic swap)
+            new_threshold = self._optimize_threshold(X_test_s, y_test,
+                                                     models=new_models,
+                                                     weights=new_weights)
 
             # Train Isolation Forest on legitimate data only (unsupervised)
+            # Use only training split to avoid data leakage
+            # Create a NEW object so in-place .fit() doesn't race with readers
+            new_anomaly_detector = IsolationForest(
+                n_estimators=200,
+                contamination=0.1,
+                max_features=1.0,
+                random_state=42,
+                n_jobs=-1
+            )
             new_anomaly_fitted = False
             try:
-                legit_mask = y == 0
-                X_legit = new_scaler.transform(X[legit_mask])
-                self.anomaly_detector.fit(X_legit)
+                legit_mask_train = y_train == 0
+                X_legit_train = X_train_s[legit_mask_train]
+                new_anomaly_detector.fit(X_legit_train)
                 new_anomaly_fitted = True
-                logger.info(f"Isolation Forest trained on {len(X_legit)} legitimate samples")
+                logger.info(f"Isolation Forest trained on {len(X_legit_train)} legitimate samples")
             except Exception as e:
                 logger.warning(f"Isolation Forest training failed: {e}")
+                new_anomaly_detector = old_anomaly_detector  # keep old fitted detector
+                new_anomaly_fitted = old_anomaly_fitted
 
-            # Atomic swap: replace scaler + anomaly flag under lock
+            # Atomic swap: replace ALL model state under lock
             with self._model_lock:
+                self.models = new_models
+                self.model_weights = new_weights
+                self.precision_threshold = new_threshold
                 self.scaler = new_scaler
+                self.anomaly_detector = new_anomaly_detector
                 self.anomaly_fitted = new_anomaly_fitted
 
-            # Log feature importance
-            self._log_feature_importance()
+            # Log feature importance (use snapshot to avoid reading self.models outside lock)
+            self._log_feature_importance(new_models)
 
             # Save models
             self._save_models()
@@ -367,7 +428,16 @@ class MachineLearningEngine:
         f1 = f1_score(y_test, predictions, zero_division=0)
 
         cm = confusion_matrix(y_test, predictions)
-        tn, fp, fn, tp = cm.ravel()
+        if cm.shape == (2, 2):
+            tn, fp, fn, tp = cm.ravel()
+        elif cm.shape == (1, 1):
+            # Single-class test set — only one cell in the matrix
+            if len(np.unique(y_test)) == 1 and y_test[0] == 0:
+                tn, fp, fn, tp = int(cm[0, 0]), 0, 0, 0
+            else:
+                tn, fp, fn, tp = 0, 0, 0, int(cm[0, 0])
+        else:
+            tn, fp, fn, tp = 0, 0, 0, 0
 
         try:
             roc_auc = roc_auc_score(y_test, y_proba)
@@ -397,29 +467,18 @@ class MachineLearningEngine:
             f"Rec={recall:.4f} F1={f1:.4f} AUC={roc_auc or 0:.4f}"
         )
 
-    def _compute_model_weights(self):
-        """Set ensemble weights proportional to each model's F1 score."""
-        total_f1 = 0.0
-        for name, metrics in self.model_metrics.items():
-            f1 = metrics.get('f1_score', 0.0)
-            self.model_weights[name] = f1
-            total_f1 += f1
 
-        if total_f1 > 0:
-            for name in self.model_weights:
-                self.model_weights[name] /= total_f1
-        else:
-            # Equal weights fallback
-            n = len(self.model_weights)
-            for name in self.model_weights:
-                self.model_weights[name] = 1.0 / n if n > 0 else 1.0
+    def _optimize_threshold(self, X_test, y_test, *, models=None, weights=None) -> float:
+        """Find the threshold that achieves >=99.6% precision (or closest).
 
-        logger.info(f"Ensemble weights: {self.model_weights}")
-
-    def _optimize_threshold(self, X_test, y_test):
-        """Find the threshold that achieves >=99.6% precision (or closest)."""
+        Args:
+            models/weights: If provided, use these instead of self.models/self.model_weights.
+                            This avoids writing self.models before the atomic swap during training.
+        Returns:
+            The optimized threshold value.
+        """
         # Get ensemble probabilities
-        proba = self._ensemble_proba(X_test)
+        proba = self._ensemble_proba(X_test, models=models, weights=weights)
 
         # Compute precision-recall curve
         precisions, recalls, thresholds = precision_recall_curve(y_test, proba)
@@ -437,32 +496,42 @@ class MachineLearningEngine:
         MIN_THRESHOLD = 0.50
 
         if best_recall_at_target > 0:
-            self.precision_threshold = max(float(best_threshold), MIN_THRESHOLD)
+            result = max(float(best_threshold), MIN_THRESHOLD)
             logger.info(
-                f"Precision-optimized threshold: {self.precision_threshold:.4f} "
+                f"Precision-optimized threshold: {result:.4f} "
                 f"(precision={self.target_precision:.3f}, recall={best_recall_at_target:.3f})"
             )
         else:
             # Couldn't reach target precision — find highest precision achievable
+            result = MIN_THRESHOLD
             max_precision = max(precisions[:-1]) if len(precisions) > 1 else 0.5
             for i, p in enumerate(precisions[:-1]):
                 if p == max_precision:
-                    self.precision_threshold = max(float(thresholds[i]), MIN_THRESHOLD)
+                    result = max(float(thresholds[i]), MIN_THRESHOLD)
                     break
             logger.warning(
                 f"Could not reach {self.target_precision:.3f} precision. "
-                f"Best: {max_precision:.4f} at threshold={self.precision_threshold:.4f}"
+                f"Best: {max_precision:.4f} at threshold={result:.4f}"
             )
 
-    def _ensemble_proba(self, X_scaled: np.ndarray) -> np.ndarray:
-        """Weighted ensemble probability across all models."""
+        return result
+
+    def _ensemble_proba(self, X_scaled: np.ndarray, *, models=None, weights=None) -> np.ndarray:
+        """Weighted ensemble probability across all models.
+
+        Args:
+            models/weights: If provided, use these instead of self.models/self.model_weights.
+        """
+        use_models = models if models is not None else self.models
+        use_weights = weights if weights is not None else self.model_weights
+
         weighted_sum = np.zeros(X_scaled.shape[0])
         total_weight = 0.0
 
-        for name, model in self.models.items():
+        for name, model in use_models.items():
             try:
                 proba = model.predict_proba(X_scaled)[:, 1]
-                weight = self.model_weights.get(name, 1.0)
+                weight = use_weights.get(name, 1.0)
                 weighted_sum += proba * weight
                 total_weight += weight
             except Exception as e:
@@ -505,6 +574,7 @@ class MachineLearningEngine:
             current_weights = dict(self.model_weights)
             current_threshold = self.precision_threshold
             current_anomaly_fitted = self.anomaly_fitted
+            current_anomaly_detector = self.anomaly_detector
 
         try:
             features_scaled = current_scaler.transform(features)
@@ -539,12 +609,10 @@ class MachineLearningEngine:
         # Unsupervised anomaly score (Isolation Forest)
         if current_anomaly_fitted:
             try:
-                # score_samples returns negative values; more negative = more anomalous
-                # Typical range: -0.6 (very anomalous) to 0 (normal)
-                raw_anomaly = self.anomaly_detector.score_samples(features_scaled)[0]
-                # Convert: scores below -0.5 → anomalous (close to 1.0)
-                # scores above -0.3 → normal (close to 0.0)
-                anomaly_score = max(0.0, min(1.0, (-raw_anomaly - 0.3) / 0.3))
+                # decision_function: 0.0 = threshold, negative = anomalous, positive = normal
+                raw_anomaly = current_anomaly_detector.decision_function(features_scaled)[0]
+                # Convert: negative scores → anomalous (close to 1.0), positive → normal (0.0)
+                anomaly_score = max(0.0, min(1.0, (-raw_anomaly) / 0.3))
                 predictions['anomaly_score'] = float(anomaly_score)
             except Exception as e:
                 logger.debug(f"Anomaly detection failed: {e}")
@@ -557,13 +625,14 @@ class MachineLearningEngine:
         predictions['precision_threshold'] = current_threshold
 
         # Track prediction (cap at 1000 to prevent unbounded memory growth)
-        self.prediction_history.append({
-            'timestamp': datetime.now().isoformat(),
-            'predictions': predictions.copy(),
-            'feature_count': features.shape[1]
-        })
-        if len(self.prediction_history) > 1000:
-            self.prediction_history = self.prediction_history[-500:]
+        with self._model_lock:
+            self.prediction_history.append({
+                'timestamp': datetime.now().isoformat(),
+                'predictions': predictions.copy(),
+                'feature_count': features.shape[1]
+            })
+            if len(self.prediction_history) > 1000:
+                self.prediction_history = self.prediction_history[-500:]
 
         return predictions
 
@@ -600,31 +669,33 @@ class MachineLearningEngine:
 
         Features match FEATURE_NAMES exactly (44 features, no padding).
         """
-        np.random.seed(42)
+        rng = np.random.RandomState(42)  # local RNG, not global state
         X = []
         y = []
 
         for _ in range(n_samples):
-            is_malicious = np.random.random() > 0.5
-
-            # 5% label noise for realism
-            if np.random.random() < 0.05:
-                is_malicious = not is_malicious
+            is_malicious = rng.random() > 0.5
 
             if is_malicious:
-                features = self._generate_malicious_sample()
+                features = self._generate_malicious_sample(rng)
             else:
-                features = self._generate_legitimate_sample()
+                features = self._generate_legitimate_sample(rng)
 
             X.append(features)
-            y.append(1 if is_malicious else 0)
+
+            # 5% label noise for realism — flip label AFTER feature generation
+            # so the feature belongs to one class but label says the other
+            label = 1 if is_malicious else 0
+            if rng.random() < 0.05:
+                label = 1 - label
+            y.append(label)
 
         X = np.array(X, dtype=np.float64)
         y = np.array(y)
 
         return X, y
 
-    def _generate_malicious_sample(self) -> list:
+    def _generate_malicious_sample(self, rng=None) -> list:
         """Generate a single malicious email feature vector.
 
         Ranges are calibrated so that legitimate corporate emails
@@ -633,32 +704,34 @@ class MachineLearningEngine:
         (disposable, typosquatting, known phishing TLDs, breaches) should
         be strong malicious signals.
         """
-        r = np.random.random
+        if rng is None:
+            rng = np.random
+        r = rng.random
 
         # Email address features
-        email_len = np.random.randint(5, 80)
-        local_len = np.random.randint(3, 40)
+        email_len = rng.randint(5, 80)
+        local_len = rng.randint(3, 40)
         has_digits = 1 if r() < 0.6 else 0
-        dot_count = np.random.choice([0, 1, 2, 3], p=[0.3, 0.3, 0.2, 0.2])
-        underscore_count = np.random.choice([0, 1, 2, 3], p=[0.3, 0.3, 0.2, 0.2])
-        dash_count = np.random.choice([0, 1, 2], p=[0.5, 0.3, 0.2])
+        dot_count = rng.choice([0, 1, 2, 3], p=[0.3, 0.3, 0.2, 0.2])
+        underscore_count = rng.choice([0, 1, 2, 3], p=[0.3, 0.3, 0.2, 0.2])
+        dash_count = rng.choice([0, 1, 2], p=[0.5, 0.3, 0.2])
         starts_digit = 1 if r() < 0.20 else 0
-        unique_chars = np.random.randint(3, 25)
+        unique_chars = rng.randint(3, 25)
         mixed_case = 1 if r() < 0.30 else 0
-        non_alnum = np.random.randint(0, 5)
+        non_alnum = rng.randint(0, 5)
 
         # Domain features — wider ranges to overlap with legitimate
-        domain_len = np.random.randint(5, 50)
-        domain_dots = np.random.choice([1, 2, 3, 4, 5], p=[0.3, 0.25, 0.2, 0.15, 0.1])
-        domain_dashes = np.random.choice([0, 1, 2, 3], p=[0.3, 0.3, 0.2, 0.2])
+        domain_len = rng.randint(5, 50)
+        domain_dots = rng.choice([1, 2, 3, 4, 5], p=[0.3, 0.25, 0.2, 0.15, 0.1])
+        domain_dashes = rng.choice([0, 1, 2, 3], p=[0.3, 0.3, 0.2, 0.2])
         domain_digits = 1 if r() < 0.40 else 0
         domain_www = 1 if r() < 0.05 else 0
-        tld_len = np.random.choice([2, 3, 4, 5, 6], p=[0.15, 0.25, 0.2, 0.2, 0.2])
+        tld_len = rng.choice([2, 3, 4, 5, 6], p=[0.15, 0.25, 0.2, 0.2, 0.2])
         suspicious_tld = 1 if r() < 0.30 else 0
         # Domain age: allow overlap — many legitimate new businesses exist
-        domain_age = max(0, np.random.exponential(180))
+        domain_age = max(0, rng.exponential(180))
         # Domain reputation: 0-55 range (default 50 is NOT malicious)
-        domain_rep = np.random.uniform(0, 55)
+        domain_rep = rng.uniform(0, 55)
 
         # Flags — true indicator
         phishing_flag = 1 if r() < 0.40 else 0
@@ -669,20 +742,20 @@ class MachineLearningEngine:
         dkim = 1 if r() < 0.20 else 0
         mx = 1 if r() < 0.70 else 0
         dnssec = 1 if r() < 0.10 else 0
-        dns_issues = np.random.randint(0, 6)
+        dns_issues = rng.randint(0, 6)
 
         # Breaches — strong malicious signal
         breach_found = 1 if r() < 0.60 else 0
-        breach_count = np.random.randint(0, 20) if breach_found else 0
+        breach_count = rng.randint(0, 20) if breach_found else 0
         # DNS score: allow overlap with legitimate (many real domains score 30-50)
-        dns_score = np.random.uniform(0, 55)
+        dns_score = rng.uniform(0, 55)
 
         # DNS extra
         a_record = 1 if r() < 0.80 else 0
 
         # Patterns — true indicators
-        suspicious_words_email = np.random.randint(0, 4)
-        suspicious_words_domain = np.random.randint(0, 3)
+        suspicious_words_email = rng.randint(0, 4)
+        suspicious_words_domain = rng.randint(0, 3)
         consecutive_digits = 1 if r() < 0.25 else 0
         consecutive_upper = 1 if r() < 0.15 else 0
         char_repetition = 1 if r() < 0.15 else 0
@@ -694,8 +767,8 @@ class MachineLearningEngine:
 
         # NEW features — disposable/typosquat are strong signals
         is_disposable = 1 if r() < 0.50 else 0
-        typosquat = np.random.uniform(0.0, 0.9) if r() < 0.30 else 0.0
-        entropy = np.random.uniform(1.0, 5.0)
+        typosquat = rng.uniform(0.0, 0.9) if r() < 0.30 else 0.0
+        entropy = rng.uniform(1.0, 5.0)
         is_free = 1 if r() < 0.60 else 0
 
         return [
@@ -712,7 +785,7 @@ class MachineLearningEngine:
             is_disposable, typosquat, entropy, is_free,
         ]
 
-    def _generate_legitimate_sample(self) -> list:
+    def _generate_legitimate_sample(self, rng=None) -> list:
         """Generate a single legitimate email feature vector.
 
         Includes realistic patterns for new corporate domains:
@@ -721,32 +794,34 @@ class MachineLearningEngine:
         - domain_age can be < 365 (new businesses/startups)
         - domain_len can be > 20 (healthreconconnect.com = 25 chars)
         """
-        r = np.random.random
+        if rng is None:
+            rng = np.random
+        r = rng.random
 
         # Email address features
-        email_len = np.random.randint(10, 55)
-        local_len = np.random.randint(3, 25)
+        email_len = rng.randint(10, 55)
+        local_len = rng.randint(3, 25)
         has_digits = 1 if r() < 0.30 else 0
-        dot_count = np.random.choice([0, 1, 2], p=[0.4, 0.4, 0.2])
-        underscore_count = np.random.choice([0, 1, 2], p=[0.5, 0.35, 0.15])
-        dash_count = np.random.choice([0, 1], p=[0.7, 0.3])
+        dot_count = rng.choice([0, 1, 2], p=[0.4, 0.4, 0.2])
+        underscore_count = rng.choice([0, 1, 2], p=[0.5, 0.35, 0.15])
+        dash_count = rng.choice([0, 1], p=[0.7, 0.3])
         starts_digit = 1 if r() < 0.05 else 0
-        unique_chars = np.random.randint(4, 20)
+        unique_chars = rng.randint(4, 20)
         mixed_case = 1 if r() < 0.15 else 0
-        non_alnum = np.random.randint(0, 3)
+        non_alnum = rng.randint(0, 3)
 
         # Domain features — wider ranges to represent real corporate domains
-        domain_len = np.random.randint(5, 35)  # Many real domains are long
-        domain_dots = np.random.choice([1, 2, 3], p=[0.5, 0.35, 0.15])
-        domain_dashes = np.random.choice([0, 1, 2], p=[0.6, 0.3, 0.1])
+        domain_len = rng.randint(5, 35)  # Many real domains are long
+        domain_dots = rng.choice([1, 2, 3], p=[0.5, 0.35, 0.15])
+        domain_dashes = rng.choice([0, 1, 2], p=[0.6, 0.3, 0.1])
         domain_digits = 1 if r() < 0.15 else 0
         domain_www = 0
-        tld_len = np.random.choice([2, 3, 4, 5], p=[0.15, 0.50, 0.20, 0.15])
+        tld_len = rng.choice([2, 3, 4, 5], p=[0.15, 0.50, 0.20, 0.15])
         suspicious_tld = 1 if r() < 0.02 else 0
         # Domain age: include new legitimate businesses (< 1 year)
-        domain_age = np.random.uniform(30, 5000)
+        domain_age = rng.uniform(30, 5000)
         # Domain reputation: 40-100 to include default score of 50
-        domain_rep = np.random.uniform(40, 100)
+        domain_rep = rng.uniform(40, 100)
 
         # Flags
         phishing_flag = 1 if r() < 0.01 else 0
@@ -757,19 +832,19 @@ class MachineLearningEngine:
         dkim = 1 if r() < 0.50 else 0
         mx = 1 if r() < 0.95 else 0
         dnssec = 1 if r() < 0.25 else 0
-        dns_issues = np.random.randint(0, 3)
+        dns_issues = rng.randint(0, 3)
 
         # Breaches
         breach_found = 1 if r() < 0.15 else 0
-        breach_count = np.random.randint(0, 3) if breach_found else 0
+        breach_count = rng.randint(0, 3) if breach_found else 0
         # DNS score: 25-100 to include domains missing some DNS features
-        dns_score = np.random.uniform(25, 100)
+        dns_score = rng.uniform(25, 100)
 
         # DNS extra
         a_record = 1 if r() < 0.95 else 0
 
         # Patterns
-        suspicious_words_email = np.random.choice([0, 1], p=[0.85, 0.15])
+        suspicious_words_email = rng.choice([0, 1], p=[0.85, 0.15])
         suspicious_words_domain = 0
         consecutive_digits = 1 if r() < 0.05 else 0
         consecutive_upper = 1 if r() < 0.02 else 0
@@ -783,7 +858,7 @@ class MachineLearningEngine:
         # NEW features
         is_disposable = 1 if r() < 0.03 else 0
         typosquat = 0.0
-        entropy = np.random.uniform(2.0, 4.5)  # Wider range for corporate names
+        entropy = rng.uniform(2.0, 4.5)  # Wider range for corporate names
         is_free = 1 if r() < 0.40 else 0
 
         return [
@@ -804,9 +879,10 @@ class MachineLearningEngine:
     # Feature importance
     # ---------------------------------------------------------------
 
-    def _log_feature_importance(self):
+    def _log_feature_importance(self, models_snapshot=None):
         """Log top feature importances from tree-based models."""
-        for name, model in self.models.items():
+        models_to_use = models_snapshot if models_snapshot is not None else self.models
+        for name, model in models_to_use.items():
             try:
                 # CalibratedClassifierCV wraps the base estimator
                 base = model
@@ -862,32 +938,31 @@ class MachineLearningEngine:
         try:
             os.makedirs(os.path.dirname(self._db_path), exist_ok=True)
             with self._db_lock:
-                conn = sqlite3.connect(self._db_path)
-                conn.execute('''
-                    CREATE TABLE IF NOT EXISTS feedback (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        email TEXT NOT NULL,
-                        features TEXT NOT NULL,
-                        predicted_score REAL,
-                        predicted_label INTEGER,
-                        user_label INTEGER NOT NULL,
-                        timestamp TEXT NOT NULL
-                    )
-                ''')
-                conn.execute('''
-                    CREATE TABLE IF NOT EXISTS retrain_log (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        timestamp TEXT NOT NULL,
-                        real_samples INTEGER,
-                        synthetic_samples INTEGER,
-                        precision REAL,
-                        recall REAL,
-                        f1 REAL,
-                        threshold REAL
-                    )
-                ''')
-                conn.commit()
-                conn.close()
+                with sqlite3.connect(self._db_path) as conn:
+                    conn.execute('''
+                        CREATE TABLE IF NOT EXISTS feedback (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            email TEXT NOT NULL,
+                            features TEXT NOT NULL,
+                            predicted_score REAL,
+                            predicted_label INTEGER,
+                            user_label INTEGER NOT NULL,
+                            timestamp TEXT NOT NULL
+                        )
+                    ''')
+                    conn.execute('''
+                        CREATE TABLE IF NOT EXISTS retrain_log (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            timestamp TEXT NOT NULL,
+                            real_samples INTEGER,
+                            synthetic_samples INTEGER,
+                            precision REAL,
+                            recall REAL,
+                            f1 REAL,
+                            threshold REAL
+                        )
+                    ''')
+                    conn.commit()
         except Exception as e:
             logger.warning(f"Failed to init feedback DB: {e}")
 
@@ -903,19 +978,20 @@ class MachineLearningEngine:
         """
         try:
             features_json = json.dumps(features.tolist() if hasattr(features, 'tolist') else list(features))
-            predicted_label = 1 if predicted_score >= self.precision_threshold else 0
+            with self._model_lock:
+                current_threshold = self.precision_threshold
+            predicted_label = 1 if predicted_score >= current_threshold else 0
 
             with self._db_lock:
-                conn = sqlite3.connect(self._db_path)
-                conn.execute(
-                    'INSERT INTO feedback (email, features, predicted_score, predicted_label, user_label, timestamp) '
-                    'VALUES (?, ?, ?, ?, ?, ?)',
-                    (email, features_json, predicted_score, predicted_label,
-                     user_label, datetime.now().isoformat())
-                )
-                conn.commit()
-                count = conn.execute('SELECT COUNT(*) FROM feedback').fetchone()[0]
-                conn.close()
+                with sqlite3.connect(self._db_path) as conn:
+                    conn.execute(
+                        'INSERT INTO feedback (email, features, predicted_score, predicted_label, user_label, timestamp) '
+                        'VALUES (?, ?, ?, ?, ?, ?)',
+                        (email, features_json, predicted_score, predicted_label,
+                         user_label, datetime.now().isoformat())
+                    )
+                    conn.commit()
+                    count = conn.execute('SELECT COUNT(*) FROM feedback').fetchone()[0]
 
             logger.info(f"Feedback stored: email={email}, pred={predicted_score:.3f}, label={user_label}, total={count}")
 
@@ -931,9 +1007,8 @@ class MachineLearningEngine:
         """Load all feedback data for training."""
         try:
             with self._db_lock:
-                conn = sqlite3.connect(self._db_path)
-                rows = conn.execute('SELECT features, user_label FROM feedback').fetchall()
-                conn.close()
+                with sqlite3.connect(self._db_path) as conn:
+                    rows = conn.execute('SELECT features, user_label FROM feedback').fetchall()
 
             if not rows:
                 return np.array([]), np.array([])
@@ -976,9 +1051,8 @@ class MachineLearningEngine:
         """Return total feedback samples collected."""
         try:
             with self._db_lock:
-                conn = sqlite3.connect(self._db_path)
-                count = conn.execute('SELECT COUNT(*) FROM feedback').fetchone()[0]
-                conn.close()
+                with sqlite3.connect(self._db_path) as conn:
+                    count = conn.execute('SELECT COUNT(*) FROM feedback').fetchone()[0]
             return count
         except Exception:
             return 0
@@ -992,24 +1066,28 @@ class MachineLearningEngine:
     # ---------------------------------------------------------------
 
     def _save_models(self):
-        """Save trained models to disk using pickle (standard for sklearn models)."""
+        """Save trained models to disk. Uses pickle (standard for sklearn model serialization, local-only files)."""
         if not self.config.enable_ml:
             return
 
         try:
             models_file = self.config.models_dir / "ml_v2_models.pkl"
-            save_data = {
-                'models': self.models,
-                'scaler': self.scaler,
-                'metrics': self.model_metrics,
-                'weights': self.model_weights,
-                'precision_threshold': self.precision_threshold,
-                'feature_names': FEATURE_NAMES,
-                'num_features': NUM_FEATURES,
-                'timestamp': datetime.now().isoformat()
-            }
+            # Read model state under lock to avoid race with concurrent retraining
+            with self._model_lock:
+                save_data = {
+                    'models': self.models,
+                    'scaler': self.scaler,
+                    'metrics': self.model_metrics,
+                    'weights': self.model_weights,
+                    'precision_threshold': self.precision_threshold,
+                    'anomaly_detector': self.anomaly_detector,
+                    'anomaly_fitted': self.anomaly_fitted,
+                    'feature_names': FEATURE_NAMES,
+                    'num_features': NUM_FEATURES,
+                    'timestamp': datetime.now().isoformat()
+                }
 
-            # pickle is standard for sklearn model serialization (local files only)
+            # sklearn models require pickle for serialization (local files only, not user-supplied)
             with open(models_file, 'wb') as f:
                 pickle.dump(save_data, f)
 

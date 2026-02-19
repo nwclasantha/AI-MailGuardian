@@ -372,7 +372,7 @@ DISPOSABLE_DOMAINS: Set[str] = {
     "recode.me",
     "recursor.net",
     "recyclemail.dk",
-    "regbypass.com", "regbypass.comsafe-mail.net",
+    "regbypass.com", "safe-mail.net",
     "rejectmail.com",
     "reliable-mail.com",
     "remail.cf", "remail.ga",
@@ -383,7 +383,6 @@ DISPOSABLE_DOMAINS: Set[str] = {
     "rppkn.com",
     "rtrtr.com",
     "s0ny.net",
-    "safe-mail.net",
     "safersignup.de",
     "safetymail.info", "safetypost.de",
     "sandelf.de",
@@ -555,7 +554,7 @@ DISPOSABLE_DOMAINS: Set[str] = {
     "yogamaven.com",
     "yomail.info",
     "yopmail.com", "yopmail.fr", "yopmail.gq", "yopmail.net",
-    "yourdomain.com",
+    # yourdomain.com removed: generic placeholder, not an actual disposable service
     "ypmail.webarnak.fr.eu.org",
     "yuurok.com",
     "zehnminutenmail.de",
@@ -567,20 +566,15 @@ DISPOSABLE_DOMAINS: Set[str] = {
     "zzz.com",
 
     # High-volume disposable services (2024-2026)
-    "sharklasers.com", "guerrillamailblock.com", "grr.la",
-    "mailforspam.com", "safetymail.info",
-    "tempail.com", "tempr.email", "temp-mail.io",
+    "tempr.email", "temp-mail.io",
     "emailondeck.com", "emailfake.com",
-    "crazymailing.com", "tmail.ws",
-    "harakirimail.com", "yepmail.com",
-    "mohmal.com", "burnermail.io",
-    "inboxkitten.com", "mailsac.com",
-    "maildrop.cc", "mytemp.email",
-    "throwaway.email", "getnada.com",
-    "tempail.com", "emailnator.com",
-    "internxt.com",
+    "tmail.ws", "yepmail.com",
+    "burnermail.io", "inboxkitten.com",
+    "mailsac.com", "throwaway.email",
+    "getnada.com", "emailnator.com",
 
     # NOTE: mail.ru, bk.ru, list.ru, inbox.ru are legitimate Russian email providers — NOT disposable
+    # NOTE: internxt.com is a legitimate privacy-focused cloud storage/email provider — NOT disposable
 }
 
 # Additional high-risk free TLDs often used for disposable/abuse emails
@@ -650,12 +644,13 @@ class DisposableEmailDetector:
             'temp', 'trash', 'junk', 'spam', 'fake', 'throw',
             'disposable', 'burner', 'guerrilla', 'mailinator',
             'nospam', 'nomail', 'devnull', 'dump', 'discard',
-            'anonymous', 'anon', 'hide', 'secret', 'privacy',
+            'anonymous', 'anon',
             'wegwerf',  # German for "throwaway"
         ]
-        domain_base = domain.split('.')[0]
+        # Check all labels (not just first) — catches mail.tempbox.net etc.
+        domain_without_tld = domain.rsplit('.', 1)[0] if '.' in domain else domain
         for pattern in suspicious_patterns:
-            if pattern in domain_base:
+            if pattern in domain_without_tld:
                 return 0.7
 
         return 0.0

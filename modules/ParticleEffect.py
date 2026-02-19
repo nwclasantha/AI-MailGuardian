@@ -18,11 +18,12 @@ class ParticleEffect(ctk.CTkFrame):
         super().__init__(parent, **kwargs)
         self.configure(fg_color="transparent")
 
-        self.canvas = tk.Canvas(self, bg='#0a0a0a', highlightthickness=0)
+        self.canvas = tk.Canvas(self, bg='#0f1117', highlightthickness=0)
         self.canvas.pack(fill="both", expand=True)
 
         self.particles = []
-        self.particle_colors = ['#00d4ff', '#00ff88', '#ff00ff']
+        self._after_id = None
+        self.particle_colors = ['#4f8ff7', '#3fb950', '#a78bfa']
         self.create_particles()
         self.animate()
 
@@ -53,13 +54,13 @@ class ParticleEffect(ctk.CTkFrame):
                     x, y = particle['x'], particle['y']
                     size = particle['size']
 
+                    glow_stipples = ['gray12', 'gray25', 'gray50']
                     for i in range(3):
                         glow_size = size + i * 2
-                        alpha = 0.1 / (i + 1)
                         self.canvas.create_oval(
                             x - glow_size, y - glow_size,
                             x + glow_size, y + glow_size,
-                            fill=particle['color'], outline="", stipple='gray50'
+                            fill=particle['color'], outline="", stipple=glow_stipples[i]
                         )
 
                     self.canvas.create_oval(
@@ -73,7 +74,17 @@ class ParticleEffect(ctk.CTkFrame):
                         particle['y'] = height + 10
                         particle['x'] = random.randint(0, max(width, 1))
 
-            self.after(50, self.animate)
+            self._after_id = self.after(50, self.animate)
+        except tk.TclError:
+            self._after_id = None  # Widget destroyed — do not reschedule
         except Exception:
             if self.winfo_exists():
-                self.after(100, self.animate)
+                self._after_id = self.after(100, self.animate)
+            else:
+                self._after_id = None
+
+    def destroy(self):
+        if self._after_id:
+            self.after_cancel(self._after_id)
+            self._after_id = None
+        super().destroy()

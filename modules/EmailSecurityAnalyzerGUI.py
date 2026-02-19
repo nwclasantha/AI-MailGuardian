@@ -61,59 +61,54 @@ from matplotlib.figure import Figure
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("dark-blue")
 
-# Color scheme
+# Color scheme — Modern Dark Pro (GitHub/Discord-inspired)
 COLORS = {
-    'bg_primary': '#0a0a0a',
-    'bg_secondary': '#1a1a1a',
-    'bg_tertiary': '#252525',
-    'bg_quaternary': '#303030',
-    'accent_primary': '#00d4ff',
-    'accent_secondary': '#00ff88',
-    'accent_tertiary': '#ff00ff',
-    'danger': '#ff3366',
-    'warning': '#ffaa00',
-    'success': '#00ff88',
-    'info': '#4466ff',
-    'text_primary': '#ffffff',
-    'text_secondary': '#b0b0b0',
-    'text_tertiary': '#808080',
-    'gradient_start': '#00d4ff',
-    'gradient_mid': '#00ff88',
-    'gradient_end': '#ff00ff',
-    'glass': 'rgba(255,255,255,0.05)',
-    'shadow': 'rgba(0,0,0,0.5)',
-    'highlight': '#ffffff'
+    'bg_primary': '#0f1117',
+    'bg_secondary': '#161b22',
+    'bg_tertiary': '#1c2128',
+    'bg_quaternary': '#272d37',
+    'accent_primary': '#4f8ff7',
+    'accent_secondary': '#3fb950',
+    'accent_tertiary': '#a78bfa',
+    'danger': '#f85149',
+    'warning': '#d29922',
+    'success': '#3fb950',
+    'info': '#58a6ff',
+    'text_primary': '#e6edf3',
+    'text_secondary': '#8b949e',
+    'text_tertiary': '#6e7681',
+    'gradient_start': '#4f8ff7',
+    'gradient_mid': '#a78bfa',
+    'gradient_end': '#3fb950',
+    'glass': 'rgba(255,255,255,0.03)',
+    'shadow': 'rgba(0,0,0,0.4)',
+    'highlight': '#f0f6fc',
+    'border': '#30363d',
+    'sidebar_active': '#1f2937',
+    'sidebar_hover': '#1a2332',
 }
 
 # Configure matplotlib dark style
 plt.style.use('dark_background')
 plt.rcParams.update({
-    'figure.facecolor': '#0a0a0a',
-    'axes.facecolor': '#1a1a1a',
-    'text.color': '#ffffff',
-    'axes.labelcolor': '#ffffff',
-    'xtick.color': '#b0b0b0',
-    'ytick.color': '#b0b0b0',
-    'grid.color': '#252525',
-    'grid.alpha': 0.3,
+    'figure.facecolor': '#0f1117',
+    'axes.facecolor': '#161b22',
+    'text.color': '#e6edf3',
+    'axes.labelcolor': '#e6edf3',
+    'xtick.color': '#8b949e',
+    'ytick.color': '#8b949e',
+    'grid.color': '#30363d',
+    'grid.alpha': 0.4,
     'font.size': 10,
-    'axes.titlesize': 14,
-    'axes.labelsize': 12,
-    'xtick.labelsize': 10,
-    'ytick.labelsize': 10,
+    'axes.titlesize': 13,
+    'axes.labelsize': 11,
+    'xtick.labelsize': 9,
+    'ytick.labelsize': 9,
     'legend.fontsize': 10,
-    'figure.titlesize': 16
+    'figure.titlesize': 15
 })
 
-# Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('email_analyzer_ultimate.log'),
-        logging.StreamHandler()
-    ]
-)
+# Library modules should not configure the root logger — main.py owns that
 logger = logging.getLogger(__name__)
 
 # Python 3.13 compatibility check
@@ -222,45 +217,38 @@ class EmailSecurityAnalyzerGUI:
         self.show_dashboard()
 
     def create_header(self):
-        """Create stunning header with animations"""
-        header_frame = ctk.CTkFrame(self.main_container, height=100, fg_color=COLORS['bg_secondary'])
+        """Create refined header"""
+        header_frame = ctk.CTkFrame(self.main_container, height=72, fg_color=COLORS['bg_secondary'],
+                                     border_width=1, border_color=COLORS['border'])
         header_frame.pack(fill="x", padx=0, pady=0)
         header_frame.pack_propagate(False)
 
-        # Gradient overlay effect
-        gradient_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
-        gradient_frame.pack(fill="both", expand=True)
-
         # Content container
-        content_frame = ctk.CTkFrame(gradient_frame, fg_color="transparent")
-        content_frame.pack(fill="both", expand=True, padx=30, pady=10)
+        content_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
+        content_frame.pack(fill="both", expand=True, padx=24, pady=8)
 
         # Logo and title section
         logo_section = ctk.CTkFrame(content_frame, fg_color="transparent")
         logo_section.pack(side="left", fill="y")
 
-        # Animated logo
-        self.logo_label = ctk.CTkLabel(logo_section, text="🛡️", font=ctk.CTkFont(size=48))
-        self.logo_label.pack(side="left", padx=(0, 20))
+        self.logo_label = ctk.CTkLabel(logo_section, text="🛡️", font=ctk.CTkFont(size=36))
+        self.logo_label.pack(side="left", padx=(0, 16))
 
-        # Title with gradient effect
         title_frame = ctk.CTkFrame(logo_section, fg_color="transparent")
         title_frame.pack(side="left", fill="y", expand=True)
 
         self.title_label = ctk.CTkLabel(
             title_frame,
             text="AI-MailArmor",
-            font=ctk.CTkFont(size=32, weight="bold"),
+            font=ctk.CTkFont(size=28, weight="bold"),
             text_color=COLORS['text_primary']
         )
         self.title_label.pack(anchor="w")
 
-        version_text = "Ultimate Security Suite • Real-time Protection • AI-Powered Analysis"
-
         self.subtitle_label = ctk.CTkLabel(
             title_frame,
-            text=version_text,
-            font=ctk.CTkFont(size=14),
+            text="Ultimate Security Suite  •  Real-time Protection  •  AI-Powered",
+            font=ctk.CTkFont(size=12),
             text_color=COLORS['text_secondary']
         )
         self.subtitle_label.pack(anchor="w")
@@ -270,7 +258,6 @@ class EmailSecurityAnalyzerGUI:
         stats_frame.pack(side="right", fill="y")
 
         self.header_stats = []
-        # Count model files safely
         model_count = 0
         if self.config.models_dir.exists():
             model_count = len(list(self.config.models_dir.glob("*.pkl")))
@@ -283,12 +270,12 @@ class EmailSecurityAnalyzerGUI:
 
         for label, value, color in stats_data:
             stat_container = ctk.CTkFrame(stats_frame, fg_color="transparent")
-            stat_container.pack(side="left", padx=20)
+            stat_container.pack(side="left", padx=16)
 
             value_label = ctk.CTkLabel(
                 stat_container,
                 text=value,
-                font=ctk.CTkFont(size=24, weight="bold"),
+                font=ctk.CTkFont(size=20, weight="bold"),
                 text_color=color
             )
             value_label.pack()
@@ -296,7 +283,7 @@ class EmailSecurityAnalyzerGUI:
             label_label = ctk.CTkLabel(
                 stat_container,
                 text=label,
-                font=ctk.CTkFont(size=12),
+                font=ctk.CTkFont(size=11),
                 text_color=COLORS['text_secondary']
             )
             label_label.pack()
@@ -304,17 +291,18 @@ class EmailSecurityAnalyzerGUI:
             self.header_stats.append({'value': value_label, 'label': label})
 
     def create_sidebar(self):
-        """Create animated sidebar navigation"""
-        sidebar_container = ctk.CTkFrame(self.main_container, fg_color=COLORS['bg_secondary'])
-        sidebar_container.pack(side="left", fill="y", padx=(0, 2))
+        """Create refined sidebar navigation"""
+        sidebar_container = ctk.CTkFrame(self.main_container, fg_color=COLORS['bg_secondary'],
+                                          border_width=1, border_color=COLORS['border'])
+        sidebar_container.pack(side="left", fill="y", padx=0, pady=0)
 
-        self.sidebar = ctk.CTkScrollableFrame(sidebar_container, width=280, fg_color=COLORS['bg_secondary'])
-        self.sidebar.pack(fill="both", expand=True, padx=2, pady=2)
+        self.sidebar = ctk.CTkScrollableFrame(sidebar_container, width=220, fg_color=COLORS['bg_secondary'])
+        self.sidebar.pack(fill="both", expand=True, padx=0, pady=0)
 
         # Navigation sections
         nav_sections = [
             {
-                'title': 'Main',
+                'title': 'MAIN',
                 'items': [
                     ("Dashboard", "📊", self.show_dashboard),
                     ("Email Analysis", "🔍", self.show_analysis),
@@ -323,7 +311,7 @@ class EmailSecurityAnalyzerGUI:
                 ]
             },
             {
-                'title': 'Security',
+                'title': 'SECURITY',
                 'items': [
                     ("MITRE ATT&CK", "🎯", self.show_mitre),
                     ("Threat Intelligence", "🌐", self.show_threat_intel),
@@ -332,7 +320,7 @@ class EmailSecurityAnalyzerGUI:
                 ]
             },
             {
-                'title': 'Reports',
+                'title': 'REPORTS',
                 'items': [
                     ("Analytics", "📈", self.show_analytics),
                     ("Export Reports", "📄", self.show_reports),
@@ -340,7 +328,7 @@ class EmailSecurityAnalyzerGUI:
                 ]
             },
             {
-                'title': 'System',
+                'title': 'SYSTEM',
                 'items': [
                     ("Settings", "⚙️", self.show_settings),
                     ("About", "ℹ️", self.show_about)
@@ -351,72 +339,67 @@ class EmailSecurityAnalyzerGUI:
         self.nav_buttons = {}
 
         for section in nav_sections:
-            # Section header
             section_label = ctk.CTkLabel(
                 self.sidebar,
-                text=section['title'].upper(),
-                font=ctk.CTkFont(size=12, weight="bold"),
-                text_color=COLORS['text_secondary']
+                text=section['title'],
+                font=ctk.CTkFont(size=11, weight="bold"),
+                text_color=COLORS['text_tertiary']
             )
-            section_label.pack(pady=(20, 10), padx=20, anchor="w")
+            section_label.pack(pady=(16, 6), padx=16, anchor="w")
 
-            # Navigation items
             for text, icon, command in section['items']:
-                btn = GradientButton(
+                btn = ctk.CTkButton(
                     self.sidebar,
-                    text=f"{icon}  {text}",
+                    text=f" {icon}  {text}",
                     command=command,
-                    height=45,
-                    font=ctk.CTkFont(size=14),
+                    height=38,
+                    font=ctk.CTkFont(size=13),
                     anchor="w",
-                    fg_color=COLORS['bg_tertiary'],
-                    gradient_colors=[COLORS['bg_tertiary'], COLORS['accent_primary']]
+                    fg_color="transparent",
+                    hover_color=COLORS['sidebar_hover'],
+                    text_color=COLORS['text_secondary'],
+                    corner_radius=8
                 )
-                btn.pack(fill="x", padx=20, pady=2)
+                btn.pack(fill="x", padx=8, pady=1)
                 self.nav_buttons[text] = btn
 
     def create_content_area(self):
         """Create main content area"""
         content_container = ctk.CTkFrame(self.main_container, fg_color=COLORS['bg_primary'])
-        content_container.pack(side="left", fill="both", expand=True, padx=10, pady=10)
+        content_container.pack(side="left", fill="both", expand=True, padx=0, pady=0)
 
         # Create all pages
         self.pages = {}
         self.create_all_pages(content_container)
 
     def create_status_bar(self):
-        """Create animated status bar"""
-        status_frame = ctk.CTkFrame(self.main_container, height=40, fg_color=COLORS['bg_secondary'])
+        """Create refined status bar"""
+        status_frame = ctk.CTkFrame(self.main_container, height=32, fg_color=COLORS['bg_secondary'],
+                                     border_width=1, border_color=COLORS['border'])
         status_frame.pack(side="bottom", fill="x", padx=0, pady=0)
         status_frame.pack_propagate(False)
 
-        # Status content
         status_content = ctk.CTkFrame(status_frame, fg_color="transparent")
-        status_content.pack(fill="both", expand=True, padx=20)
+        status_content.pack(fill="both", expand=True, padx=16)
 
-        # Status text
         self.status_label = ctk.CTkLabel(
             status_content,
             text="Ready",
-            font=ctk.CTkFont(size=12),
-            text_color=COLORS['text_secondary']
+            font=ctk.CTkFont(size=11),
+            text_color=COLORS['text_tertiary']
         )
-        self.status_label.pack(side="left", pady=10)
-
-        # Connection indicator
-        connection_text = "● Connected"
+        self.status_label.pack(side="left", pady=6)
 
         self.connection_indicator = ctk.CTkLabel(
             status_content,
-            text=connection_text,
-            font=ctk.CTkFont(size=12),
+            text="● Connected",
+            font=ctk.CTkFont(size=11),
             text_color=COLORS['success']
         )
-        self.connection_indicator.pack(side="right", pady=10, padx=(0, 20))
+        self.connection_indicator.pack(side="right", pady=6, padx=(0, 12))
 
-        # Progress bar
         self.status_progress = AnimatedProgressBar(status_content)
-        self.status_progress.pack(side="right", fill="x", expand=True, padx=20, pady=10)
+        self.status_progress.pack(side="right", fill="x", expand=True, padx=16, pady=6)
         self.status_progress.set_progress(0)
 
     def create_all_pages(self, parent):
@@ -462,34 +445,35 @@ class EmailSecurityAnalyzerGUI:
         self.pages['about'] = self.create_about_page(parent)
 
     def create_dashboard_page(self, parent):
-        """Create stunning dashboard with live visualizations"""
+        """Create dashboard with live visualizations"""
         page = ctk.CTkScrollableFrame(parent, fg_color=COLORS['bg_primary'])
 
         # Dashboard header
         header_frame = ctk.CTkFrame(page, fg_color="transparent")
-        header_frame.pack(fill="x", pady=(0, 20))
+        header_frame.pack(fill="x", padx=24, pady=(16, 16))
 
         ctk.CTkLabel(
             header_frame,
             text="Security Dashboard",
-            font=ctk.CTkFont(size=28, weight="bold"),
+            font=ctk.CTkFont(size=24, weight="bold"),
             text_color=COLORS['text_primary']
         ).pack(side="left")
 
-        # Refresh button
-        refresh_btn = GradientButton(
+        refresh_btn = ctk.CTkButton(
             header_frame,
-            text="🔄 Refresh",
+            text="🔄  Refresh",
             command=self.refresh_dashboard,
-            width=120,
-            height=35,
-            gradient_colors=[COLORS['accent_primary'], COLORS['accent_secondary']]
+            width=110,
+            height=36,
+            fg_color=COLORS['bg_tertiary'],
+            hover_color=COLORS['bg_quaternary'],
+            corner_radius=8
         )
-        refresh_btn.pack(side="right", padx=10)
+        refresh_btn.pack(side="right")
 
         # Stats cards row
         stats_container = ctk.CTkFrame(page, fg_color="transparent")
-        stats_container.pack(fill="x", pady=10)
+        stats_container.pack(fill="x", padx=24, pady=(0, 16))
 
         self.dashboard_cards = []
         card_data = [
@@ -503,86 +487,92 @@ class EmailSecurityAnalyzerGUI:
 
         for i, (title, value, color, icon, key) in enumerate(card_data):
             card = self.create_animated_stat_card(stats_container, title, value, color, icon)
-            card.grid(row=i // 3, column=i % 3, padx=10, pady=10, sticky="ew")
+            card.grid(row=i // 3, column=i % 3, padx=6, pady=6, sticky="ew")
             card.key = key
             self.dashboard_cards.append(card)
             stats_container.columnconfigure(i % 3, weight=1)
 
         # Charts section
         charts_container = ctk.CTkFrame(page, fg_color="transparent")
-        charts_container.pack(fill="both", expand=True, pady=20)
+        charts_container.pack(fill="both", expand=True, padx=24, pady=(0, 16))
 
         # Risk distribution chart
-        risk_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        risk_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        risk_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=12,
+                                   border_width=1, border_color=COLORS['border'])
+        risk_frame.grid(row=0, column=0, padx=6, pady=6, sticky="nsew")
 
         ctk.CTkLabel(
             risk_frame,
             text="Risk Distribution",
-            font=ctk.CTkFont(size=18, weight="bold")
-        ).pack(pady=10)
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(16, 8))
 
-        self.risk_chart_fig = Figure(figsize=(6, 4), facecolor='#1a1a1a')
+        self.risk_chart_fig = Figure(figsize=(6, 4), facecolor='#161b22')
         self.risk_chart_ax = self.risk_chart_fig.add_subplot(111)
-        self.risk_chart_ax.set_facecolor('#1a1a1a')
+        self.risk_chart_ax.set_facecolor('#161b22')
 
         self.risk_chart_canvas = FigureCanvasTkAgg(self.risk_chart_fig, risk_frame)
-        self.risk_chart_canvas.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=(0, 20))
+        self.risk_chart_canvas.get_tk_widget().pack(fill="both", expand=True, padx=16, pady=(0, 16))
 
         # Threat timeline
-        timeline_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        timeline_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+        timeline_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=12,
+                                       border_width=1, border_color=COLORS['border'])
+        timeline_frame.grid(row=0, column=1, padx=6, pady=6, sticky="nsew")
 
         ctk.CTkLabel(
             timeline_frame,
             text="Threat Timeline",
-            font=ctk.CTkFont(size=18, weight="bold")
-        ).pack(pady=10)
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(16, 8))
 
-        self.timeline_fig = Figure(figsize=(6, 4), facecolor='#1a1a1a')
+        self.timeline_fig = Figure(figsize=(6, 4), facecolor='#161b22')
         self.timeline_ax = self.timeline_fig.add_subplot(111)
-        self.timeline_ax.set_facecolor('#1a1a1a')
+        self.timeline_ax.set_facecolor('#161b22')
 
         self.timeline_canvas = FigureCanvasTkAgg(self.timeline_fig, timeline_frame)
-        self.timeline_canvas.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=(0, 20))
+        self.timeline_canvas.get_tk_widget().pack(fill="both", expand=True, padx=16, pady=(0, 16))
 
         charts_container.columnconfigure(0, weight=1)
         charts_container.columnconfigure(1, weight=1)
 
-        # Radar chart for threat categories
-        radar_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        radar_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
+        # Radar chart
+        radar_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=12,
+                                    border_width=1, border_color=COLORS['border'])
+        radar_frame.grid(row=1, column=0, padx=6, pady=6, sticky="nsew")
 
         ctk.CTkLabel(
             radar_frame,
             text="Threat Categories",
-            font=ctk.CTkFont(size=18, weight="bold")
-        ).pack(pady=10)
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(16, 8))
 
         self.radar_chart = RadarChart(
             radar_frame,
             ['Phishing', 'Malware', 'Spam', 'Breach', 'DNS', 'Domain'],
-            fg_color='#1a1a1a'
+            fg_color='#161b22'
         )
-        self.radar_chart.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+        self.radar_chart.pack(fill="both", expand=True, padx=16, pady=(0, 16))
 
         # Recent activity feed
-        activity_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        activity_frame.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
+        activity_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=12,
+                                       border_width=1, border_color=COLORS['border'])
+        activity_frame.grid(row=1, column=1, padx=6, pady=6, sticky="nsew")
 
         ctk.CTkLabel(
             activity_frame,
             text="Recent Activity",
-            font=ctk.CTkFont(size=18, weight="bold")
-        ).pack(pady=10)
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(16, 8))
 
         self.activity_feed = ctk.CTkTextbox(
             activity_frame,
             height=300,
             fg_color=COLORS['bg_tertiary'],
-            text_color=COLORS['text_primary']
+            text_color=COLORS['text_primary'],
+            font=ctk.CTkFont(family="Consolas", size=11),
+            corner_radius=8
         )
-        self.activity_feed.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+        self.activity_feed.pack(fill="both", expand=True, padx=16, pady=(0, 16))
 
         charts_container.rowconfigure(0, weight=1)
         charts_container.rowconfigure(1, weight=1)
@@ -590,42 +580,38 @@ class EmailSecurityAnalyzerGUI:
         return page
 
     def create_animated_stat_card(self, parent, title, value, color, icon):
-        """Create beautiful animated stat card"""
-        card = ctk.CTkFrame(parent, fg_color=COLORS['bg_secondary'], corner_radius=15, height=140)
+        """Create stat card"""
+        card = ctk.CTkFrame(parent, fg_color=COLORS['bg_secondary'], corner_radius=12, height=120,
+                             border_width=1, border_color=COLORS['border'])
         card.pack_propagate(False)
 
-        # Content
         content = ctk.CTkFrame(card, fg_color="transparent")
         content.pack(expand=True)
 
-        # Icon with glow effect
         icon_label = ctk.CTkLabel(
             content,
             text=icon,
-            font=ctk.CTkFont(size=36),
+            font=ctk.CTkFont(size=28),
             text_color=color
         )
-        icon_label.pack(pady=(10, 5))
+        icon_label.pack(pady=(8, 4))
 
-        # Value
         value_label = ctk.CTkLabel(
             content,
             text=value,
-            font=ctk.CTkFont(size=28, weight="bold"),
+            font=ctk.CTkFont(size=22, weight="bold"),
             text_color=COLORS['text_primary']
         )
         value_label.pack()
 
-        # Title
         title_label = ctk.CTkLabel(
             content,
             text=title,
-            font=ctk.CTkFont(size=14),
+            font=ctk.CTkFont(size=12),
             text_color=COLORS['text_secondary']
         )
-        title_label.pack(pady=(5, 10))
+        title_label.pack(pady=(2, 8))
 
-        # Store references
         card.value_label = value_label
         card.title = title
         card.color = color
@@ -633,71 +619,71 @@ class EmailSecurityAnalyzerGUI:
         return card
 
     def create_analysis_page(self, parent):
-        """Create advanced email analysis page"""
+        """Create email analysis page"""
         page = ctk.CTkFrame(parent, fg_color=COLORS['bg_primary'])
 
         # Header
         header_frame = ctk.CTkFrame(page, fg_color="transparent")
-        header_frame.pack(fill="x", pady=20)
+        header_frame.pack(fill="x", padx=24, pady=(16, 12))
 
         ctk.CTkLabel(
             header_frame,
-            text="AI-MailArmor Analysis",
-            font=ctk.CTkFont(size=28, weight="bold"),
+            text="Email Analysis",
+            font=ctk.CTkFont(size=24, weight="bold"),
             text_color=COLORS['text_primary']
-        ).pack()
+        ).pack(anchor="w")
 
-        ml_status = "AI-powered analysis" if self.config.enable_ml else "Rule-based analysis (ML disabled)"
+        ml_status = "AI-powered" if self.config.enable_ml else "Rule-based (ML disabled)"
         ctk.CTkLabel(
             header_frame,
-            text=f"Advanced {ml_status} with real-time threat detection",
-            font=ctk.CTkFont(size=14),
+            text=f"{ml_status} analysis with real-time threat detection",
+            font=ctk.CTkFont(size=12),
             text_color=COLORS['text_secondary']
-        ).pack()
+        ).pack(anchor="w")
 
         # Main content with two columns
         content_frame = ctk.CTkFrame(page, fg_color="transparent")
-        content_frame.pack(fill="both", expand=True, padx=20)
+        content_frame.pack(fill="both", expand=True, padx=24, pady=(0, 16))
 
         # Left column - Input
-        left_column = ctk.CTkFrame(content_frame, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        left_column.pack(side="left", fill="both", expand=True, padx=(0, 10))
+        left_column = ctk.CTkFrame(content_frame, fg_color=COLORS['bg_secondary'], corner_radius=12,
+                                    border_width=1, border_color=COLORS['border'])
+        left_column.pack(side="left", fill="both", expand=True, padx=(0, 8))
 
-        # Input section
         input_frame = ctk.CTkFrame(left_column, fg_color="transparent")
-        input_frame.pack(fill="x", padx=30, pady=30)
+        input_frame.pack(fill="x", padx=24, pady=24)
 
         ctk.CTkLabel(
             input_frame,
             text="Enter Email Address",
-            font=ctk.CTkFont(size=18, weight="bold")
-        ).pack(pady=(0, 20))
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(0, 12))
 
-        # Email input with validation
         self.email_entry = ctk.CTkEntry(
             input_frame,
             placeholder_text="example@domain.com",
-            height=50,
-            font=ctk.CTkFont(size=16),
+            height=44,
+            font=ctk.CTkFont(size=14),
             fg_color=COLORS['bg_tertiary'],
-            border_color=COLORS['accent_primary'],
-            border_width=2
+            border_color=COLORS['border'],
+            border_width=1,
+            corner_radius=8
         )
-        self.email_entry.pack(fill="x", pady=10)
+        self.email_entry.pack(fill="x", pady=8)
 
-        # Password input (optional - for dark web breach checking)
+        # Password input
         password_label_frame = ctk.CTkFrame(input_frame, fg_color="transparent")
-        password_label_frame.pack(fill="x", pady=(15, 0))
+        password_label_frame.pack(fill="x", pady=(12, 0))
 
         ctk.CTkLabel(
             password_label_frame,
             text="Check Password (Optional)",
-            font=ctk.CTkFont(size=14, weight="bold")
+            font=ctk.CTkFont(size=13, weight="bold")
         ).pack(side="left")
 
         ctk.CTkLabel(
             password_label_frame,
-            text="Hashed locally, only partial hash sent",
+            text="Hashed locally, partial hash sent",
             font=ctk.CTkFont(size=10),
             text_color=COLORS['text_tertiary']
         ).pack(side="right")
@@ -705,14 +691,15 @@ class EmailSecurityAnalyzerGUI:
         self.password_entry = ctk.CTkEntry(
             input_frame,
             placeholder_text="Enter password to check against breach databases",
-            height=45,
-            font=ctk.CTkFont(size=14),
+            height=40,
+            font=ctk.CTkFont(size=13),
             fg_color=COLORS['bg_tertiary'],
-            border_color=COLORS['accent_secondary'],
-            border_width=2,
+            border_color=COLORS['border'],
+            border_width=1,
+            corner_radius=8,
             show="*"
         )
-        self.password_entry.pack(fill="x", pady=(5, 0))
+        self.password_entry.pack(fill="x", pady=(4, 0))
 
         self.show_password_var = ctk.BooleanVar(value=False)
 
@@ -729,20 +716,20 @@ class EmailSecurityAnalyzerGUI:
             command=toggle_password_visibility,
             font=ctk.CTkFont(size=11),
             height=20,
-            checkbox_width=18,
-            checkbox_height=18
+            checkbox_width=16,
+            checkbox_height=16
         ).pack(anchor="w", pady=(3, 0))
 
         # Quick fill buttons
         quick_fill_frame = ctk.CTkFrame(input_frame, fg_color="transparent")
-        quick_fill_frame.pack(fill="x", pady=10)
+        quick_fill_frame.pack(fill="x", pady=8)
 
         ctk.CTkLabel(
             quick_fill_frame,
             text="Quick Test:",
-            font=ctk.CTkFont(size=12),
-            text_color=COLORS['text_secondary']
-        ).pack(side="left", padx=(0, 10))
+            font=ctk.CTkFont(size=11),
+            text_color=COLORS['text_tertiary']
+        ).pack(side="left", padx=(0, 8))
 
         test_emails = [
             ("Safe", "john.doe@gmail.com"),
@@ -760,35 +747,40 @@ class EmailSecurityAnalyzerGUI:
                 text=label,
                 command=fill_email,
                 width=80,
-                height=30,
-                fg_color=COLORS['bg_quaternary']
+                height=28,
+                fg_color=COLORS['bg_tertiary'],
+                hover_color=COLORS['bg_quaternary'],
+                corner_radius=6,
+                font=ctk.CTkFont(size=11)
             )
             btn.pack(side="left", padx=2)
 
-        # Button frame for Analyze + Stop
+        # Analyze + Stop buttons
         btn_frame = ctk.CTkFrame(input_frame, fg_color="transparent")
-        btn_frame.pack(fill="x", pady=20)
+        btn_frame.pack(fill="x", pady=16)
 
         self.analyze_btn = GradientButton(
             btn_frame,
             text="🔍 Analyze Security",
             command=self.analyze_email,
-            height=50,
-            font=ctk.CTkFont(size=18, weight="bold"),
-            gradient_colors=[COLORS['accent_primary'], COLORS['accent_secondary']]
+            height=44,
+            font=ctk.CTkFont(size=15, weight="bold"),
+            gradient_colors=[COLORS['accent_primary'], COLORS['accent_secondary']],
+            corner_radius=8
         )
-        self.analyze_btn.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        self.analyze_btn.pack(side="left", fill="x", expand=True, padx=(0, 4))
 
         self.stop_analyze_btn = GradientButton(
             btn_frame,
             text="⏹ Stop",
             command=self.stop_single_analysis,
-            height=50,
-            font=ctk.CTkFont(size=18, weight="bold"),
-            gradient_colors=[COLORS['danger'], '#ff6666'],
+            height=44,
+            font=ctk.CTkFont(size=15, weight="bold"),
+            gradient_colors=[COLORS['danger'], '#ff7b72'],
+            corner_radius=8,
             state="disabled"
         )
-        self.stop_analyze_btn.pack(side="right", fill="x", expand=True, padx=(5, 0))
+        self.stop_analyze_btn.pack(side="right", fill="x", expand=True, padx=(4, 0))
 
         # Cancel flag for single analysis
         self._single_cancel = threading.Event()
@@ -805,37 +797,37 @@ class EmailSecurityAnalyzerGUI:
 
         # Options
         options_frame = ctk.CTkFrame(left_column, fg_color="transparent")
-        options_frame.pack(fill="x", padx=30, pady=(0, 30))
+        options_frame.pack(fill="x", padx=24, pady=(0, 24))
 
         ctk.CTkLabel(
             options_frame,
             text="Analysis Options",
-            font=ctk.CTkFont(size=16, weight="bold")
-        ).pack(pady=(0, 10))
+            font=ctk.CTkFont(size=14, weight="bold")
+        ).pack(pady=(0, 8))
 
         self.deep_scan_var = ctk.BooleanVar(value=getattr(self.config, "deep_scan_default", True))
         ctk.CTkCheckBox(
             options_frame,
             text="Deep Scan (DNS, WHOIS, Breach Check)",
             variable=self.deep_scan_var,
-            font=ctk.CTkFont(size=14)
-        ).pack(anchor="w", pady=5)
+            font=ctk.CTkFont(size=13)
+        ).pack(anchor="w", pady=4)
 
         self.ml_analysis_var = ctk.BooleanVar(value=self.config.enable_ml)
         ml_checkbox = ctk.CTkCheckBox(
             options_frame,
             text="Machine Learning Analysis",
             variable=self.ml_analysis_var,
-            font=ctk.CTkFont(size=14)
+            font=ctk.CTkFont(size=13)
         )
-        ml_checkbox.pack(anchor="w", pady=5)
+        ml_checkbox.pack(anchor="w", pady=4)
 
         if not self.config.enable_ml:
             ml_checkbox.configure(state="disabled")
             ctk.CTkLabel(
                 options_frame,
-                text="(ML analysis disabled in settings)",
-                font=ctk.CTkFont(size=12),
+                text="(ML disabled in settings)",
+                font=ctk.CTkFont(size=11),
                 text_color=COLORS['warning']
             ).pack(anchor="w")
 
@@ -844,25 +836,26 @@ class EmailSecurityAnalyzerGUI:
             options_frame,
             text="Threat Intelligence Lookup",
             variable=self.threat_intel_var,
-            font=ctk.CTkFont(size=14)
-        ).pack(anchor="w", pady=5)
+            font=ctk.CTkFont(size=13)
+        ).pack(anchor="w", pady=4)
 
         # Right column - Results
         self.results_column = ctk.CTkScrollableFrame(
             content_frame,
             fg_color=COLORS['bg_secondary'],
-            corner_radius=15
+            corner_radius=12,
+            border_width=1,
+            border_color=COLORS['border']
         )
-        self.results_column.pack(side="right", fill="both", expand=True, padx=(10, 0))
+        self.results_column.pack(side="right", fill="both", expand=True, padx=(8, 0))
 
-        # Initial state
         initial_label = ctk.CTkLabel(
             self.results_column,
             text="Analysis results will appear here",
-            font=ctk.CTkFont(size=16),
-            text_color=COLORS['text_secondary']
+            font=ctk.CTkFont(size=14),
+            text_color=COLORS['text_tertiary']
         )
-        initial_label.pack(expand=True, pady=100)
+        initial_label.pack(expand=True, pady=80)
 
         return page
 
@@ -872,109 +865,114 @@ class EmailSecurityAnalyzerGUI:
 
         # Header
         header_frame = ctk.CTkFrame(page, fg_color="transparent")
-        header_frame.pack(fill="x", pady=20)
+        header_frame.pack(fill="x", padx=24, pady=(16, 12))
 
         ctk.CTkLabel(
             header_frame,
             text="Bulk Email Scanner",
-            font=ctk.CTkFont(size=28, weight="bold"),
+            font=ctk.CTkFont(size=24, weight="bold"),
             text_color=COLORS['text_primary']
-        ).pack()
+        ).pack(anchor="w")
 
         # Main content
         content_frame = ctk.CTkFrame(page, fg_color="transparent")
-        content_frame.pack(fill="both", expand=True, padx=20)
+        content_frame.pack(fill="both", expand=True, padx=24)
 
         # Upload section
-        upload_frame = ctk.CTkFrame(content_frame, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        upload_frame.pack(fill="x", pady=10)
+        upload_frame = ctk.CTkFrame(content_frame, fg_color=COLORS['bg_secondary'], corner_radius=12,
+                                     border_width=1, border_color=COLORS['border'])
+        upload_frame.pack(fill="x", pady=(0, 12))
 
         upload_content = ctk.CTkFrame(upload_frame, fg_color="transparent")
-        upload_content.pack(padx=30, pady=30)
+        upload_content.pack(padx=24, pady=24)
 
         ctk.CTkLabel(
             upload_content,
             text="Upload Email List",
-            font=ctk.CTkFont(size=20, weight="bold")
-        ).pack(pady=(0, 20))
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(0, 16))
 
-        # File selection
         file_frame = ctk.CTkFrame(upload_content, fg_color="transparent")
-        file_frame.pack(fill="x", pady=10)
+        file_frame.pack(fill="x", pady=8)
 
         self.file_label = ctk.CTkLabel(
             file_frame,
             text="No file selected",
-            font=ctk.CTkFont(size=14),
+            font=ctk.CTkFont(size=13),
             text_color=COLORS['text_secondary']
         )
-        self.file_label.pack(side="left", padx=10)
+        self.file_label.pack(side="left", padx=8)
 
-        select_btn = GradientButton(
+        select_btn = ctk.CTkButton(
             file_frame,
-            text="📁 Select File",
+            text="📁  Select File",
             command=self.select_bulk_file,
-            width=150,
-            gradient_colors=[COLORS['accent_primary'], COLORS['accent_secondary']]
+            width=140,
+            height=36,
+            fg_color=COLORS['accent_primary'],
+            hover_color=COLORS['info'],
+            corner_radius=8
         )
         select_btn.pack(side="right")
 
-        # Process + Stop button frame
         bulk_btn_frame = ctk.CTkFrame(upload_content, fg_color="transparent")
-        bulk_btn_frame.pack(fill="x", pady=20)
+        bulk_btn_frame.pack(fill="x", pady=16)
 
         self.process_btn = GradientButton(
             bulk_btn_frame,
             text="⚡ Start Bulk Analysis",
             command=self.process_bulk,
-            height=50,
-            font=ctk.CTkFont(size=16, weight="bold"),
-            gradient_colors=[COLORS['success'], COLORS['accent_secondary']]
+            height=44,
+            font=ctk.CTkFont(size=15, weight="bold"),
+            gradient_colors=[COLORS['success'], COLORS['accent_secondary']],
+            corner_radius=8
         )
-        self.process_btn.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        self.process_btn.pack(side="left", fill="x", expand=True, padx=(0, 4))
 
         self.stop_bulk_btn = GradientButton(
             bulk_btn_frame,
             text="⏹ Stop",
             command=self.stop_bulk_analysis,
-            height=50,
-            font=ctk.CTkFont(size=16, weight="bold"),
-            gradient_colors=[COLORS['danger'], '#ff6666'],
+            height=44,
+            font=ctk.CTkFont(size=15, weight="bold"),
+            gradient_colors=[COLORS['danger'], '#ff7b72'],
+            corner_radius=8,
             state="disabled"
         )
-        self.stop_bulk_btn.pack(side="right", fill="x", expand=True, padx=(5, 0))
+        self.stop_bulk_btn.pack(side="right", fill="x", expand=True, padx=(4, 0))
 
         # Progress section
-        progress_frame = ctk.CTkFrame(content_frame, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        progress_frame.pack(fill="x", pady=10)
+        progress_frame = ctk.CTkFrame(content_frame, fg_color=COLORS['bg_secondary'], corner_radius=12,
+                                       border_width=1, border_color=COLORS['border'])
+        progress_frame.pack(fill="x", pady=(0, 12))
 
         progress_content = ctk.CTkFrame(progress_frame, fg_color="transparent")
-        progress_content.pack(padx=30, pady=20)
+        progress_content.pack(padx=24, pady=16)
 
         self.bulk_progress_label = ctk.CTkLabel(
             progress_content,
             text="Ready to process",
-            font=ctk.CTkFont(size=16)
+            font=ctk.CTkFont(size=14)
         )
-        self.bulk_progress_label.pack(pady=10)
+        self.bulk_progress_label.pack(pady=8)
 
         self.bulk_progress_bar = AnimatedProgressBar(progress_content)
-        self.bulk_progress_bar.pack(fill="x", pady=10)
+        self.bulk_progress_bar.pack(fill="x", pady=8)
 
-        # Results section
-        results_frame = ctk.CTkFrame(content_frame, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        results_frame.pack(fill="both", expand=True, pady=10)
+        # Results section (hidden until analysis completes)
+        self.bulk_results_frame = ctk.CTkFrame(content_frame, fg_color=COLORS['bg_secondary'], corner_radius=12,
+                                                border_width=1, border_color=COLORS['border'])
+        results_frame = self.bulk_results_frame
 
         results_header = ctk.CTkFrame(results_frame, fg_color="transparent")
-        results_header.pack(fill="x", padx=30, pady=(20, 10))
+        results_header.pack(fill="x", padx=24, pady=(16, 8))
 
         ctk.CTkLabel(
             results_header,
             text="Analysis Results",
-            font=ctk.CTkFont(size=20, weight="bold")
+            font=ctk.CTkFont(size=16, weight="bold")
         ).pack(side="left")
 
-        # Export buttons
         export_frame = ctk.CTkFrame(results_header, fg_color="transparent")
         export_frame.pack(side="right")
 
@@ -988,89 +986,97 @@ class EmailSecurityAnalyzerGUI:
                 text=f"{icon} {text}",
                 command=cmd,
                 width=80,
-                height=35,
-                fg_color=COLORS['bg_quaternary']
+                height=32,
+                fg_color=COLORS['bg_tertiary'],
+                hover_color=COLORS['bg_quaternary'],
+                corner_radius=6,
+                font=ctk.CTkFont(size=11)
             )
-            btn.pack(side="left", padx=5)
+            btn.pack(side="left", padx=4)
 
-        # Results display
         self.bulk_results = ctk.CTkTextbox(
             results_frame,
             fg_color=COLORS['bg_tertiary'],
-            text_color=COLORS['text_primary']
+            text_color=COLORS['text_primary'],
+            font=ctk.CTkFont(family="Consolas", size=11),
+            corner_radius=8
         )
-        self.bulk_results.pack(fill="both", expand=True, padx=30, pady=(0, 30))
+        self.bulk_results.pack(fill="both", expand=True, padx=24, pady=(0, 24))
 
         return page
 
     def create_monitor_page(self, parent):
-        """Create real-time monitoring page with working feed"""
+        """Create real-time monitoring page"""
         page = ctk.CTkFrame(parent, fg_color=COLORS['bg_primary'])
 
         # Header
         header_frame = ctk.CTkFrame(page, fg_color="transparent")
-        header_frame.pack(fill="x", pady=20)
+        header_frame.pack(fill="x", padx=24, pady=(16, 12))
 
         ctk.CTkLabel(
             header_frame,
             text="Real-time Security Monitor",
-            font=ctk.CTkFont(size=28, weight="bold"),
+            font=ctk.CTkFont(size=24, weight="bold"),
             text_color=COLORS['text_primary']
-        ).pack()
+        ).pack(anchor="w")
 
         ctk.CTkLabel(
             header_frame,
             text="Live monitoring of email security events",
-            font=ctk.CTkFont(size=14),
+            font=ctk.CTkFont(size=12),
             text_color=COLORS['text_secondary']
-        ).pack()
+        ).pack(anchor="w")
 
         # Control buttons
         control_frame = ctk.CTkFrame(page, fg_color="transparent")
-        control_frame.pack(fill="x", padx=20, pady=10)
+        control_frame.pack(fill="x", padx=24, pady=(0, 8))
 
         self.monitor_status_label = ctk.CTkLabel(
             control_frame,
             text="● Monitor Active",
-            font=ctk.CTkFont(size=14),
+            font=ctk.CTkFont(size=13),
             text_color=COLORS['success']
         )
-        self.monitor_status_label.pack(side="left", padx=10)
+        self.monitor_status_label.pack(side="left")
 
         clear_btn = ctk.CTkButton(
             control_frame,
             text="Clear Log",
             command=self.clear_monitor_feed,
             width=100,
-            height=35,
-            fg_color=COLORS['bg_quaternary']
+            height=36,
+            fg_color=COLORS['bg_tertiary'],
+            hover_color=COLORS['bg_quaternary'],
+            corner_radius=8
         )
-        clear_btn.pack(side="right", padx=10)
+        clear_btn.pack(side="right", padx=8)
 
         pause_btn = ctk.CTkButton(
             control_frame,
             text="Pause",
             command=self.toggle_monitor,
             width=100,
-            height=35,
-            fg_color=COLORS['accent_primary']
+            height=36,
+            fg_color=COLORS['accent_primary'],
+            corner_radius=8
         )
-        pause_btn.pack(side="right", padx=5)
+        pause_btn.pack(side="right")
         self.monitor_pause_btn = pause_btn
 
         # Monitor display frame
-        monitor_frame = ctk.CTkFrame(page, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        monitor_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        monitor_frame = ctk.CTkFrame(page, fg_color=COLORS['bg_secondary'], corner_radius=12,
+                                      border_width=1, border_color=COLORS['border'])
+        monitor_frame.pack(fill="both", expand=True, padx=24, pady=(0, 16))
 
-        # Live feed
         self.monitor_feed = ctk.CTkTextbox(
             monitor_frame,
             fg_color=COLORS['bg_tertiary'],
             text_color=COLORS['text_primary'],
-            font=ctk.CTkFont(family="Courier", size=12),
-            wrap="word"
+            font=ctk.CTkFont(family="Consolas", size=11),
+            wrap="word",
+            corner_radius=8
         )
-        self.monitor_feed.pack(fill="both", expand=True, padx=20, pady=20)
+        self.monitor_feed.pack(fill="both", expand=True, padx=16, pady=16)
 
         # Initialize with welcome message
         welcome_msg = """========================================
@@ -1079,12 +1085,9 @@ EMAIL SECURITY MONITOR - INITIALIZED
 System ready. Monitoring for security events...
 
 """
-        self.monitor_feed.insert("0.0", welcome_msg)
+        self.monitor_feed.insert("1.0", welcome_msg)
 
-        # Start monitoring non-blocking with status update
-        self.monitor_running = True
-        self.start_monitor_simulation()
-        self.ui(self.monitor_status_label.configure, text="● Monitor Active", text_color=COLORS['success'])
+        # Monitor starts on first navigation to the page (see show_monitor)
 
         return page
 
@@ -1216,23 +1219,22 @@ System ready. Monitoring for security events...
                                 content = self.monitor_feed.get("1.0", tk.END)
                                 lines = content.split('\n')
                                 if len(lines) > 500:
-                                    self.monitor_feed.delete("500.0", tk.END)
+                                    self.monitor_feed.delete("501.0", tk.END)
 
                                 # Auto-scroll to top to show latest
                                 self.monitor_feed.see("1.0")
                         except Exception:
                             pass
 
-                    # Schedule update in main thread (wrap in try/except for pre-mainloop safety)
-                    try:
-                        if hasattr(self, 'root'):
-                            self.root.after(0, update_feed)
-                    except Exception:
-                        pass
+                    # Schedule update in main thread (safe winfo_exists check)
+                    self.ui(update_feed)
 
                     # Random delay between events (more realistic)
+                    # Use interruptible sleep so pause/stop takes effect quickly
                     delay = random.uniform(0.5, 3.0)
-                    time.sleep(delay)
+                    end_time = time.time() + delay
+                    while time.time() < end_time and self.monitor_running:
+                        time.sleep(0.1)
 
                 except Exception:
                     time.sleep(1)
@@ -1240,7 +1242,7 @@ System ready. Monitoring for security events...
         # Start monitoring thread
         self.monitor_thread = threading.Thread(target=generate_monitor_data, daemon=True)
         self.monitor_thread.start()
-        print("Monitor thread started")
+        logger.debug("Monitor thread started")
 
     def clear_monitor_feed(self):
         """Clear the monitor feed"""
@@ -1252,7 +1254,7 @@ EMAIL SECURITY MONITOR - CLEARED
 Monitoring continues...
 
 """
-            self.monitor_feed.insert("0.0", header)
+            self.monitor_feed.insert("1.0", header)
 
     def toggle_monitor(self):
         """Toggle monitor pause/resume"""
@@ -1291,34 +1293,29 @@ Monitoring continues...
         """Create MITRE ATT&CK page"""
         page = ctk.CTkScrollableFrame(parent, fg_color=COLORS['bg_primary'])
 
-        # Header
         header_frame = ctk.CTkFrame(page, fg_color="transparent")
-        header_frame.pack(fill="x", pady=20)
+        header_frame.pack(fill="x", padx=24, pady=(16, 12))
 
         ctk.CTkLabel(
             header_frame,
             text="MITRE ATT&CK Framework",
-            font=ctk.CTkFont(size=28, weight="bold"),
+            font=ctk.CTkFont(size=24, weight="bold"),
             text_color=COLORS['text_primary']
-        ).pack()
+        ).pack(anchor="w")
 
-        # Techniques grid
         techniques_frame = ctk.CTkFrame(page, fg_color="transparent")
-        techniques_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        techniques_frame.pack(fill="both", expand=True, padx=24, pady=(0, 16))
 
         self.mitre_cards = []
-
-        # Store reference to techniques frame for later update
         self.mitre_techniques_frame = techniques_frame
 
-        # Show loading message initially
         loading_label = ctk.CTkLabel(
             techniques_frame,
             text="Loading MITRE ATT&CK techniques...",
-            font=ctk.CTkFont(size=16),
-            text_color=COLORS['text_secondary']
+            font=ctk.CTkFont(size=14),
+            text_color=COLORS['text_tertiary']
         )
-        loading_label.pack(expand=True, pady=50)
+        loading_label.pack(expand=True, pady=40)
 
         return page
 
@@ -1326,28 +1323,29 @@ Monitoring continues...
         """Create threat intelligence page"""
         page = ctk.CTkScrollableFrame(parent, fg_color=COLORS['bg_primary'])
 
-        # Header
-        ctk.CTkLabel(
-            page,
-            text="Threat Intelligence Dashboard",
-            font=ctk.CTkFont(size=28, weight="bold"),
-            text_color=COLORS['text_primary']
-        ).pack(pady=20)
+        header_frame = ctk.CTkFrame(page, fg_color="transparent")
+        header_frame.pack(fill="x", padx=24, pady=(16, 12))
 
-        # Threat feeds
-        feeds_frame = ctk.CTkFrame(page, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        feeds_frame.pack(fill="x", padx=20, pady=10)
+        ctk.CTkLabel(
+            header_frame,
+            text="Threat Intelligence",
+            font=ctk.CTkFont(size=24, weight="bold"),
+            text_color=COLORS['text_primary']
+        ).pack(anchor="w")
+
+        feeds_frame = ctk.CTkFrame(page, fg_color=COLORS['bg_secondary'], corner_radius=12,
+                                    border_width=1, border_color=COLORS['border'])
+        feeds_frame.pack(fill="x", padx=24, pady=(0, 16))
 
         ctk.CTkLabel(
             feeds_frame,
             text="Active Threat Feeds",
-            font=ctk.CTkFont(size=20, weight="bold")
-        ).pack(pady=20)
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(20, 12), padx=24, anchor="w")
 
         feeds_grid = ctk.CTkFrame(feeds_frame, fg_color="transparent")
-        feeds_grid.pack(fill="x", padx=30, pady=(0, 30))
+        feeds_grid.pack(fill="x", padx=24, pady=(0, 24))
 
-        # Store reference for updates
         self.threat_feeds_grid = feeds_grid
 
         if self.analyzer and hasattr(self.analyzer, 'threat_intel'):
@@ -1356,40 +1354,40 @@ Monitoring continues...
             loading_label = ctk.CTkLabel(
                 feeds_grid,
                 text="Loading threat intelligence feeds...",
-                font=ctk.CTkFont(size=16),
-                text_color=COLORS['text_secondary']
+                font=ctk.CTkFont(size=14),
+                text_color=COLORS['text_tertiary']
             )
-            loading_label.pack(expand=True, pady=50)
+            loading_label.pack(expand=True, pady=40)
 
         return page
 
     def populate_threat_feeds(self, parent_frame):
         """Populate threat feeds in the given frame"""
-        # Clear existing content
         for widget in parent_frame.winfo_children():
             widget.destroy()
 
         if self.analyzer and hasattr(self.analyzer, 'threat_intel'):
             for i, (feed_name, feed_data) in enumerate(self.analyzer.threat_intel.threat_feeds.items()):
-                feed_card = ctk.CTkFrame(parent_frame, fg_color=COLORS['bg_tertiary'], corner_radius=10)
-                feed_card.grid(row=i // 2, column=i % 2, padx=10, pady=10, sticky="ew")
+                feed_card = ctk.CTkFrame(parent_frame, fg_color=COLORS['bg_tertiary'], corner_radius=8,
+                                          border_width=1, border_color=COLORS['border'])
+                feed_card.grid(row=i // 2, column=i % 2, padx=6, pady=6, sticky="ew")
 
                 feed_content = ctk.CTkFrame(feed_card, fg_color="transparent")
-                feed_content.pack(padx=20, pady=15)
+                feed_content.pack(padx=16, pady=12)
 
                 ctk.CTkLabel(
                     feed_content,
                     text=feed_name.replace('_', ' ').title(),
-                    font=ctk.CTkFont(size=16, weight="bold")
+                    font=ctk.CTkFont(size=14, weight="bold")
                 ).pack()
 
                 count = len(feed_data) if isinstance(feed_data, (set, list)) else 0
                 ctk.CTkLabel(
                     feed_content,
                     text=f"{count} indicators",
-                    font=ctk.CTkFont(size=24, weight="bold"),
+                    font=ctk.CTkFont(size=20, weight="bold"),
                     text_color=COLORS['accent_primary']
-                ).pack(pady=10)
+                ).pack(pady=8)
 
                 parent_frame.columnconfigure(i % 2, weight=1)
 
@@ -1397,120 +1395,113 @@ Monitoring continues...
         """Create ML models page"""
         page = ctk.CTkScrollableFrame(parent, fg_color=COLORS['bg_primary'])
 
-        # Header
-        ctk.CTkLabel(
-            page,
-            text="Machine Learning Models",
-            font=ctk.CTkFont(size=28, weight="bold"),
-            text_color=COLORS['text_primary']
-        ).pack(pady=20)
+        header_frame = ctk.CTkFrame(page, fg_color="transparent")
+        header_frame.pack(fill="x", padx=24, pady=(16, 12))
 
-        # WARNING: Training Metrics Notice (store reference for hiding later)
-        self.ml_warning_frame = ctk.CTkFrame(page, fg_color=COLORS['warning'], corner_radius=15)
-        self.ml_warning_frame.pack(fill="x", padx=20, pady=(0, 20))
+        ctk.CTkLabel(
+            header_frame,
+            text="Machine Learning Models",
+            font=ctk.CTkFont(size=24, weight="bold"),
+            text_color=COLORS['text_primary']
+        ).pack(anchor="w")
+
+        # Training metrics notice — softer treatment
+        self.ml_warning_frame = ctk.CTkFrame(page, fg_color=COLORS['bg_quaternary'], corner_radius=12,
+                                              border_width=1, border_color=COLORS['warning'])
+        self.ml_warning_frame.pack(fill="x", padx=24, pady=(0, 16))
 
         warning_content = ctk.CTkFrame(self.ml_warning_frame, fg_color="transparent")
-        warning_content.pack(padx=20, pady=15)
+        warning_content.pack(padx=20, pady=12)
 
         ctk.CTkLabel(
             warning_content,
-            text="⚠️  TRAINING PERFORMANCE METRICS",
-            font=ctk.CTkFont(size=16, weight="bold"),
-            text_color='#000000'
-        ).pack()
+            text="⚠️  Training Performance Metrics",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            text_color=COLORS['warning']
+        ).pack(anchor="w")
 
         ctk.CTkLabel(
             warning_content,
-            text="These metrics show model validation on TEST DATA, NOT real email predictions.",
+            text="These metrics show model validation on test data, not real email predictions.",
             font=ctk.CTkFont(size=12),
-            text_color='#000000'
-        ).pack()
-
-        ctk.CTkLabel(
-            warning_content,
-            text="For REAL prediction statistics, analyze emails and check the Analytics dashboard or Excel reports.",
-            font=ctk.CTkFont(size=11),
-            text_color='#000000'
-        ).pack()
+            text_color=COLORS['text_secondary']
+        ).pack(anchor="w")
 
         if not self.config.enable_ml:
-            # Show ML disabled message
-            disabled_frame = ctk.CTkFrame(page, fg_color=COLORS['bg_secondary'], corner_radius=15)
-            disabled_frame.pack(fill="x", padx=20, pady=20)
+            disabled_frame = ctk.CTkFrame(page, fg_color=COLORS['bg_secondary'], corner_radius=12,
+                                           border_width=1, border_color=COLORS['border'])
+            disabled_frame.pack(fill="x", padx=24, pady=16)
 
             disabled_content = ctk.CTkFrame(disabled_frame, fg_color="transparent")
-            disabled_content.pack(padx=30, pady=30)
+            disabled_content.pack(padx=24, pady=24)
 
             ctk.CTkLabel(
                 disabled_content,
-                text="⚠️ Machine Learning Disabled",
-                font=ctk.CTkFont(size=24, weight="bold"),
+                text="Machine Learning Disabled",
+                font=ctk.CTkFont(size=20, weight="bold"),
                 text_color=COLORS['warning']
-            ).pack(pady=10)
+            ).pack(pady=8)
 
             ctk.CTkLabel(
                 disabled_content,
                 text="ML features are currently disabled in settings.\n"
                      "Enable ML in config.ini [ml] section: auto_train = true",
-                font=ctk.CTkFont(size=16),
+                font=ctk.CTkFont(size=13),
                 text_color=COLORS['text_secondary']
-            ).pack(pady=10)
+            ).pack(pady=8)
 
             return page
 
-        # Models grid
         models_frame = ctk.CTkFrame(page, fg_color="transparent")
-        models_frame.pack(fill="both", expand=True, padx=20)
+        models_frame.pack(fill="both", expand=True, padx=24)
 
-        # Store reference for updates
         self.ml_models_frame = models_frame
 
-        # Initial loading message
         if not self.analyzer or not hasattr(self.analyzer, 'ml_engine'):
             loading_label = ctk.CTkLabel(
                 models_frame,
                 text="Loading ML models...",
-                font=ctk.CTkFont(size=16),
-                text_color=COLORS['text_secondary']
+                font=ctk.CTkFont(size=14),
+                text_color=COLORS['text_tertiary']
             )
-            loading_label.pack(expand=True, pady=50)
+            loading_label.pack(expand=True, pady=40)
         else:
             self.populate_ml_models(models_frame)
 
         # ML Engine Info
-        info_frame = ctk.CTkFrame(page, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        info_frame.pack(fill="x", padx=20, pady=20)
+        info_frame = ctk.CTkFrame(page, fg_color=COLORS['bg_secondary'], corner_radius=12,
+                                   border_width=1, border_color=COLORS['border'])
+        info_frame.pack(fill="x", padx=24, pady=16)
 
         info_content = ctk.CTkFrame(info_frame, fg_color="transparent")
-        info_content.pack(padx=30, pady=30)
+        info_content.pack(padx=24, pady=20)
 
         ctk.CTkLabel(
             info_content,
             text="ML Engine v2",
-            font=ctk.CTkFont(size=20, weight="bold")
-        ).pack(pady=(0, 20))
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(0, 12), anchor="w")
 
-        engine_info = ctk.CTkFrame(info_content, fg_color=COLORS['bg_tertiary'], corner_radius=10)
-        engine_info.pack(fill="x", pady=10)
+        engine_info = ctk.CTkFrame(info_content, fg_color=COLORS['bg_tertiary'], corner_radius=8)
+        engine_info.pack(fill="x", pady=8)
 
         engine_content = ctk.CTkFrame(engine_info, fg_color="transparent")
-        engine_content.pack(padx=20, pady=15)
+        engine_content.pack(padx=16, pady=12)
 
         ctk.CTkLabel(
             engine_content,
             text="XGBoost + Random Forest (Calibrated)",
-            font=ctk.CTkFont(size=16),
+            font=ctk.CTkFont(size=14),
             text_color=COLORS['accent_primary']
-        ).pack()
+        ).pack(anchor="w")
 
         ctk.CTkLabel(
             engine_content,
             text="44 features | Precision-optimized threshold | Isolation Forest anomaly detection",
-            font=ctk.CTkFont(size=13),
+            font=ctk.CTkFont(size=12),
             text_color=COLORS['text_secondary']
-        ).pack(pady=5)
+        ).pack(anchor="w", pady=4)
 
-        # Show model file status
         if self.analyzer and hasattr(self.analyzer, 'ml_engine') and self.analyzer.ml_engine:
             ml_engine = self.analyzer.ml_engine
             models_file = self.config.models_dir / "ml_v2_models.pkl"
@@ -1520,16 +1511,16 @@ Monitoring continues...
                 ctk.CTkLabel(
                     engine_content,
                     text=f"Model saved: {models_file.name} ({size_kb:.0f} KB)",
-                    font=ctk.CTkFont(size=12),
+                    font=ctk.CTkFont(size=11),
                     text_color=COLORS['success']
-                ).pack(pady=2)
+                ).pack(anchor="w", pady=2)
             feedback_count = ml_engine.get_feedback_count() if hasattr(ml_engine, 'get_feedback_count') else 0
             ctk.CTkLabel(
                 engine_content,
                 text=f"Feedback samples: {feedback_count} | Threshold: {ml_engine.precision_threshold:.4f}",
-                font=ctk.CTkFont(size=12),
+                font=ctk.CTkFont(size=11),
                 text_color=COLORS['text_secondary']
-            ).pack(pady=2)
+            ).pack(anchor="w", pady=2)
 
         return page
 
@@ -1555,7 +1546,7 @@ Monitoring continues...
 
             if not has_predictions:
                 # Show "No predictions yet" message
-                message_frame = ctk.CTkFrame(parent_frame, fg_color=COLORS['bg_secondary'], corner_radius=15)
+                message_frame = ctk.CTkFrame(parent_frame, fg_color=COLORS['bg_secondary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
                 message_frame.grid(row=0, column=0, columnspan=3, padx=20, pady=50, sticky="nsew")
 
                 message_content = ctk.CTkFrame(message_frame, fg_color="transparent")
@@ -1589,8 +1580,8 @@ Monitoring continues...
                 if model is None:
                     continue
 
-                model_card = ctk.CTkFrame(parent_frame, fg_color=COLORS['bg_secondary'], corner_radius=15)
-                model_card.grid(row=i // 3, column=i % 3, padx=10, pady=10, sticky="nsew")
+                model_card = ctk.CTkFrame(parent_frame, fg_color=COLORS['bg_secondary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
+                model_card.grid(row=i // 3, column=i % 3, padx=6, pady=6, sticky="nsew")
 
                 # Model info
                 model_content = ctk.CTkFrame(model_card, fg_color="transparent")
@@ -1680,53 +1671,55 @@ Monitoring continues...
         """Create DNS security page"""
         page = ctk.CTkFrame(parent, fg_color=COLORS['bg_primary'])
 
-        # Header
-        ctk.CTkLabel(
-            page,
-            text="DNS Security Checker",
-            font=ctk.CTkFont(size=28, weight="bold"),
-            text_color=COLORS['text_primary']
-        ).pack(pady=20)
+        header_frame = ctk.CTkFrame(page, fg_color="transparent")
+        header_frame.pack(fill="x", padx=24, pady=(16, 12))
 
-        # DNS check interface
-        check_frame = ctk.CTkFrame(page, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        check_frame.pack(fill="x", padx=20, pady=10)
+        ctk.CTkLabel(
+            header_frame,
+            text="DNS Security Checker",
+            font=ctk.CTkFont(size=24, weight="bold"),
+            text_color=COLORS['text_primary']
+        ).pack(anchor="w")
+
+        check_frame = ctk.CTkFrame(page, fg_color=COLORS['bg_secondary'], corner_radius=12,
+                                    border_width=1, border_color=COLORS['border'])
+        check_frame.pack(fill="x", padx=24, pady=(0, 12))
 
         check_content = ctk.CTkFrame(check_frame, fg_color="transparent")
-        check_content.pack(padx=30, pady=30)
+        check_content.pack(padx=24, pady=24)
 
-        # Domain input
         ctk.CTkLabel(
             check_content,
             text="Enter Domain to Check",
-            font=ctk.CTkFont(size=18, weight="bold")
-        ).pack(pady=(0, 20))
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(0, 12))
 
         self.dns_entry = ctk.CTkEntry(
             check_content,
             placeholder_text="example.com",
-            height=50,
-            font=ctk.CTkFont(size=16),
+            height=44,
+            font=ctk.CTkFont(size=14),
             fg_color=COLORS['bg_tertiary'],
-            border_color=COLORS['accent_primary'],
-            border_width=2
+            border_color=COLORS['border'],
+            border_width=1,
+            corner_radius=8
         )
-        self.dns_entry.pack(fill="x", pady=10)
+        self.dns_entry.pack(fill="x", pady=8)
 
-        # Check button
         dns_check_btn = GradientButton(
             check_content,
             text="🔍 Check DNS Security",
             command=self.check_dns_security,
-            height=50,
-            font=ctk.CTkFont(size=16, weight="bold"),
-            gradient_colors=[COLORS['accent_primary'], COLORS['accent_secondary']]
+            height=44,
+            font=ctk.CTkFont(size=15, weight="bold"),
+            gradient_colors=[COLORS['accent_primary'], COLORS['accent_secondary']],
+            corner_radius=8
         )
-        dns_check_btn.pack(fill="x", pady=10)
+        dns_check_btn.pack(fill="x", pady=8)
 
-        # Results
-        self.dns_results = ctk.CTkFrame(page, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        self.dns_results.pack(fill="both", expand=True, padx=20, pady=10)
+        self.dns_results = ctk.CTkFrame(page, fg_color=COLORS['bg_secondary'], corner_radius=12,
+                                         border_width=1, border_color=COLORS['border'])
+        self.dns_results.pack(fill="both", expand=True, padx=24, pady=(0, 16))
         self.dns_results.pack_forget()
 
         return page
@@ -1735,185 +1728,186 @@ Monitoring continues...
         """Create analytics page"""
         page = ctk.CTkScrollableFrame(parent, fg_color=COLORS['bg_primary'])
 
-        # Header
-        ctk.CTkLabel(
-            page,
-            text="Security Analytics",
-            font=ctk.CTkFont(size=28, weight="bold"),
-            text_color=COLORS['text_primary']
-        ).pack(pady=20)
+        header_frame = ctk.CTkFrame(page, fg_color="transparent")
+        header_frame.pack(fill="x", padx=24, pady=(16, 12))
 
-        # Analytics charts
+        ctk.CTkLabel(
+            header_frame,
+            text="Security Analytics",
+            font=ctk.CTkFont(size=24, weight="bold"),
+            text_color=COLORS['text_primary']
+        ).pack(anchor="w")
+
         charts_container = ctk.CTkFrame(page, fg_color="transparent")
-        charts_container.pack(fill="both", expand=True, padx=20)
+        charts_container.pack(fill="both", expand=True, padx=24)
 
         # Row 1: Risk Distribution & Heatmap
         # 1. Risk Level Distribution (Pie Chart)
-        risk_dist_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        risk_dist_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        risk_dist_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
+        risk_dist_frame.grid(row=0, column=0, padx=6, pady=6, sticky="nsew")
 
         ctk.CTkLabel(
             risk_dist_frame,
             text="Risk Level Distribution",
-            font=ctk.CTkFont(size=18, weight="bold")
-        ).pack(pady=15)
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(16, 8))
 
-        self.risk_dist_fig = Figure(figsize=(6, 5), facecolor='#1a1a1a')
+        self.risk_dist_fig = Figure(figsize=(6, 5), facecolor='#161b22')
         self.risk_dist_ax = self.risk_dist_fig.add_subplot(111)
-        self.risk_dist_ax.set_facecolor('#1a1a1a')
+        self.risk_dist_ax.set_facecolor('#161b22')
 
         self.risk_dist_canvas = FigureCanvasTkAgg(self.risk_dist_fig, risk_dist_frame)
-        self.risk_dist_canvas.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=(0, 20))
+        self.risk_dist_canvas.get_tk_widget().pack(fill="both", expand=True, padx=16, pady=(0, 16))
 
         # 2. Risk Heatmap by Domain
-        heatmap_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        heatmap_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+        heatmap_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
+        heatmap_frame.grid(row=0, column=1, padx=6, pady=6, sticky="nsew")
 
         ctk.CTkLabel(
             heatmap_frame,
             text="Risk Heatmap by Domain",
-            font=ctk.CTkFont(size=18, weight="bold")
-        ).pack(pady=15)
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(16, 8))
 
-        self.heatmap_fig = Figure(figsize=(8, 5), facecolor='#1a1a1a')
+        self.heatmap_fig = Figure(figsize=(8, 5), facecolor='#161b22')
         self.heatmap_ax = self.heatmap_fig.add_subplot(111)
-        self.heatmap_ax.set_facecolor('#1a1a1a')
+        self.heatmap_ax.set_facecolor('#161b22')
 
         self.heatmap_canvas = FigureCanvasTkAgg(self.heatmap_fig, heatmap_frame)
-        self.heatmap_canvas.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=(0, 20))
+        self.heatmap_canvas.get_tk_widget().pack(fill="both", expand=True, padx=16, pady=(0, 16))
 
         # Row 2: Top Threats & Breach Statistics
         # 3. Top Threat Types (Bar Chart)
-        threat_types_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        threat_types_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
+        threat_types_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
+        threat_types_frame.grid(row=1, column=0, padx=6, pady=6, sticky="nsew")
 
         ctk.CTkLabel(
             threat_types_frame,
             text="Top Threat Types",
-            font=ctk.CTkFont(size=18, weight="bold")
-        ).pack(pady=15)
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(16, 8))
 
-        self.threat_types_fig = Figure(figsize=(6, 5), facecolor='#1a1a1a')
+        self.threat_types_fig = Figure(figsize=(6, 5), facecolor='#161b22')
         self.threat_types_ax = self.threat_types_fig.add_subplot(111)
-        self.threat_types_ax.set_facecolor('#1a1a1a')
+        self.threat_types_ax.set_facecolor('#161b22')
 
         self.threat_types_canvas = FigureCanvasTkAgg(self.threat_types_fig, threat_types_frame)
-        self.threat_types_canvas.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=(0, 20))
+        self.threat_types_canvas.get_tk_widget().pack(fill="both", expand=True, padx=16, pady=(0, 16))
 
         # 4. Breach Statistics (Bar Chart)
-        breach_stats_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        breach_stats_frame.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
+        breach_stats_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
+        breach_stats_frame.grid(row=1, column=1, padx=6, pady=6, sticky="nsew")
 
         ctk.CTkLabel(
             breach_stats_frame,
             text="Breach Statistics by Domain",
-            font=ctk.CTkFont(size=18, weight="bold")
-        ).pack(pady=15)
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(16, 8))
 
-        self.breach_stats_fig = Figure(figsize=(8, 5), facecolor='#1a1a1a')
+        self.breach_stats_fig = Figure(figsize=(8, 5), facecolor='#161b22')
         self.breach_stats_ax = self.breach_stats_fig.add_subplot(111)
-        self.breach_stats_ax.set_facecolor('#1a1a1a')
+        self.breach_stats_ax.set_facecolor('#161b22')
 
         self.breach_stats_canvas = FigureCanvasTkAgg(self.breach_stats_fig, breach_stats_frame)
-        self.breach_stats_canvas.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=(0, 20))
+        self.breach_stats_canvas.get_tk_widget().pack(fill="both", expand=True, padx=16, pady=(0, 16))
 
         # Row 3: Risk Score Histogram & MITRE Techniques
         # 5. Risk Score Distribution (Histogram)
-        risk_hist_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        risk_hist_frame.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
+        risk_hist_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
+        risk_hist_frame.grid(row=2, column=0, padx=6, pady=6, sticky="nsew")
 
         ctk.CTkLabel(
             risk_hist_frame,
             text="Risk Score Distribution",
-            font=ctk.CTkFont(size=18, weight="bold")
-        ).pack(pady=15)
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(16, 8))
 
-        self.risk_hist_fig = Figure(figsize=(6, 5), facecolor='#1a1a1a')
+        self.risk_hist_fig = Figure(figsize=(6, 5), facecolor='#161b22')
         self.risk_hist_ax = self.risk_hist_fig.add_subplot(111)
-        self.risk_hist_ax.set_facecolor('#1a1a1a')
+        self.risk_hist_ax.set_facecolor('#161b22')
 
         self.risk_hist_canvas = FigureCanvasTkAgg(self.risk_hist_fig, risk_hist_frame)
-        self.risk_hist_canvas.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=(0, 20))
+        self.risk_hist_canvas.get_tk_widget().pack(fill="both", expand=True, padx=16, pady=(0, 16))
 
         # 6. Top MITRE Techniques (Horizontal Bar)
-        mitre_top_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        mitre_top_frame.grid(row=2, column=1, padx=10, pady=10, sticky="nsew")
+        mitre_top_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
+        mitre_top_frame.grid(row=2, column=1, padx=6, pady=6, sticky="nsew")
 
         ctk.CTkLabel(
             mitre_top_frame,
             text="Top 10 MITRE ATT&CK Techniques",
-            font=ctk.CTkFont(size=18, weight="bold")
-        ).pack(pady=15)
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(16, 8))
 
-        self.mitre_top_fig = Figure(figsize=(8, 5), facecolor='#1a1a1a')
+        self.mitre_top_fig = Figure(figsize=(8, 5), facecolor='#161b22')
         self.mitre_top_ax = self.mitre_top_fig.add_subplot(111)
-        self.mitre_top_ax.set_facecolor('#1a1a1a')
+        self.mitre_top_ax.set_facecolor('#161b22')
 
         self.mitre_top_canvas = FigureCanvasTkAgg(self.mitre_top_fig, mitre_top_frame)
-        self.mitre_top_canvas.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=(0, 20))
+        self.mitre_top_canvas.get_tk_widget().pack(fill="both", expand=True, padx=16, pady=(0, 16))
 
         # Row 3: ML Prediction Charts
         # 7. ML Model Performance Comparison (Bar Chart)
-        ml_models_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        ml_models_frame.grid(row=3, column=0, padx=10, pady=10, sticky="nsew")
+        ml_models_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
+        ml_models_frame.grid(row=3, column=0, padx=6, pady=6, sticky="nsew")
 
         ctk.CTkLabel(
             ml_models_frame,
             text="ML Model Performance",
-            font=ctk.CTkFont(size=18, weight="bold")
-        ).pack(pady=15)
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(16, 8))
 
-        self.ml_models_fig = Figure(figsize=(6, 5), facecolor='#1a1a1a')
+        self.ml_models_fig = Figure(figsize=(6, 5), facecolor='#161b22')
         self.ml_models_ax = self.ml_models_fig.add_subplot(111)
-        self.ml_models_ax.set_facecolor('#1a1a1a')
+        self.ml_models_ax.set_facecolor('#161b22')
 
         self.ml_models_canvas = FigureCanvasTkAgg(self.ml_models_fig, ml_models_frame)
-        self.ml_models_canvas.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=(0, 20))
+        self.ml_models_canvas.get_tk_widget().pack(fill="both", expand=True, padx=16, pady=(0, 16))
 
         # 8. Prediction Confidence Distribution (Doughnut Chart)
-        ml_confidence_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        ml_confidence_frame.grid(row=3, column=1, padx=10, pady=10, sticky="nsew")
+        ml_confidence_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
+        ml_confidence_frame.grid(row=3, column=1, padx=6, pady=6, sticky="nsew")
 
         ctk.CTkLabel(
             ml_confidence_frame,
             text="ML Prediction Confidence",
-            font=ctk.CTkFont(size=18, weight="bold")
-        ).pack(pady=15)
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(16, 8))
 
-        self.ml_confidence_fig = Figure(figsize=(6, 5), facecolor='#1a1a1a')
+        self.ml_confidence_fig = Figure(figsize=(6, 5), facecolor='#161b22')
         self.ml_confidence_ax = self.ml_confidence_fig.add_subplot(111)
-        self.ml_confidence_ax.set_facecolor('#1a1a1a')
+        self.ml_confidence_ax.set_facecolor('#161b22')
 
         self.ml_confidence_canvas = FigureCanvasTkAgg(self.ml_confidence_fig, ml_confidence_frame)
-        self.ml_confidence_canvas.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=(0, 20))
+        self.ml_confidence_canvas.get_tk_widget().pack(fill="both", expand=True, padx=16, pady=(0, 16))
 
         # Row 4: ML Risk Level Predictions
         # 9. ML Predictions by Risk Level (Horizontal Bar Chart)
-        ml_risk_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        ml_risk_frame.grid(row=4, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+        ml_risk_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
+        ml_risk_frame.grid(row=4, column=0, columnspan=2, padx=6, pady=6, sticky="nsew")
 
         ctk.CTkLabel(
             ml_risk_frame,
             text="ML Predictions by Risk Level",
-            font=ctk.CTkFont(size=18, weight="bold")
-        ).pack(pady=15)
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(16, 8))
 
-        self.ml_risk_fig = Figure(figsize=(12, 5), facecolor='#1a1a1a')
+        self.ml_risk_fig = Figure(figsize=(12, 5), facecolor='#161b22')
         self.ml_risk_ax = self.ml_risk_fig.add_subplot(111)
-        self.ml_risk_ax.set_facecolor('#1a1a1a')
+        self.ml_risk_ax.set_facecolor('#161b22')
 
         self.ml_risk_canvas = FigureCanvasTkAgg(self.ml_risk_fig, ml_risk_frame)
-        self.ml_risk_canvas.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=(0, 20))
+        self.ml_risk_canvas.get_tk_widget().pack(fill="both", expand=True, padx=16, pady=(0, 16))
 
         # Row 5: ML Classification Metrics Table
-        metrics_table_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        metrics_table_frame.grid(row=5, column=0, padx=10, pady=10, sticky="nsew")
+        metrics_table_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
+        metrics_table_frame.grid(row=5, column=0, padx=6, pady=6, sticky="nsew")
 
         ctk.CTkLabel(
             metrics_table_frame,
             text="ML Classification Metrics",
-            font=ctk.CTkFont(size=18, weight="bold")
-        ).pack(pady=15)
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(16, 8))
 
         # Create scrollable frame for table
         self.metrics_table_container = ctk.CTkScrollableFrame(
@@ -1921,24 +1915,24 @@ Monitoring continues...
             fg_color=COLORS['bg_tertiary'],
             height=300
         )
-        self.metrics_table_container.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+        self.metrics_table_container.pack(fill="both", expand=True, padx=16, pady=(0, 16))
 
         # Row 5: Confusion Matrix Heatmap
-        confusion_matrix_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        confusion_matrix_frame.grid(row=5, column=1, padx=10, pady=10, sticky="nsew")
+        confusion_matrix_frame = ctk.CTkFrame(charts_container, fg_color=COLORS['bg_secondary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
+        confusion_matrix_frame.grid(row=5, column=1, padx=6, pady=6, sticky="nsew")
 
         ctk.CTkLabel(
             confusion_matrix_frame,
             text="Confusion Matrix (Ensemble)",
-            font=ctk.CTkFont(size=18, weight="bold")
-        ).pack(pady=15)
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(16, 8))
 
-        self.confusion_fig = Figure(figsize=(6, 5), facecolor='#1a1a1a')
+        self.confusion_fig = Figure(figsize=(6, 5), facecolor='#161b22')
         self.confusion_ax = self.confusion_fig.add_subplot(111)
-        self.confusion_ax.set_facecolor('#1a1a1a')
+        self.confusion_ax.set_facecolor('#161b22')
 
         self.confusion_canvas = FigureCanvasTkAgg(self.confusion_fig, confusion_matrix_frame)
-        self.confusion_canvas.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=(0, 20))
+        self.confusion_canvas.get_tk_widget().pack(fill="both", expand=True, padx=16, pady=(0, 16))
 
         # Configure grid
         for i in range(2):
@@ -1955,26 +1949,27 @@ Monitoring continues...
         """Create reports page"""
         page = ctk.CTkScrollableFrame(parent, fg_color=COLORS['bg_primary'])
 
-        # Header
-        ctk.CTkLabel(
-            page,
-            text="Security Reports",
-            font=ctk.CTkFont(size=28, weight="bold"),
-            text_color=COLORS['text_primary']
-        ).pack(pady=20)
+        header_frame = ctk.CTkFrame(page, fg_color="transparent")
+        header_frame.pack(fill="x", padx=24, pady=(16, 12))
 
-        # Report options
-        options_frame = ctk.CTkFrame(page, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        options_frame.pack(fill="x", padx=20, pady=10)
+        ctk.CTkLabel(
+            header_frame,
+            text="Security Reports",
+            font=ctk.CTkFont(size=24, weight="bold"),
+            text_color=COLORS['text_primary']
+        ).pack(anchor="w")
+
+        options_frame = ctk.CTkFrame(page, fg_color=COLORS['bg_secondary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
+        options_frame.pack(fill="x", padx=24, pady=(0, 12))
 
         options_content = ctk.CTkFrame(options_frame, fg_color="transparent")
-        options_content.pack(padx=30, pady=30)
+        options_content.pack(padx=24, pady=24)
 
         ctk.CTkLabel(
             options_content,
             text="Generate Security Report",
-            font=ctk.CTkFont(size=20, weight="bold")
-        ).pack(pady=(0, 20))
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(0, 12), anchor="w")
 
         # Report type selection
         report_types = [
@@ -1992,9 +1987,9 @@ Monitoring continues...
                 text=f"{icon} {text}",
                 variable=self.report_type_var,
                 value=value,
-                font=ctk.CTkFont(size=14)
+                font=ctk.CTkFont(size=13)
             )
-            btn.pack(anchor="w", pady=5)
+            btn.pack(anchor="w", pady=4)
 
         # Date range
         date_frame = ctk.CTkFrame(options_content, fg_color="transparent")
@@ -2015,43 +2010,42 @@ Monitoring continues...
         )
         date_menu.pack(side="left")
 
-        # Generate button
         generate_btn = GradientButton(
             options_content,
             text="📄 Generate Report",
             command=self.generate_report,
-            height=50,
-            font=ctk.CTkFont(size=16, weight="bold"),
-            gradient_colors=[COLORS['accent_primary'], COLORS['accent_secondary']]
+            height=44,
+            font=ctk.CTkFont(size=15, weight="bold"),
+            gradient_colors=[COLORS['accent_primary'], COLORS['accent_secondary']],
+            corner_radius=8
         )
-        generate_btn.pack(fill="x", pady=20)
+        generate_btn.pack(fill="x", pady=16)
 
-        # Export formats
-        export_frame = ctk.CTkFrame(page, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        export_frame.pack(fill="x", padx=20, pady=10)
+        export_frame = ctk.CTkFrame(page, fg_color=COLORS['bg_secondary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
+        export_frame.pack(fill="x", padx=24, pady=(0, 12))
 
         export_content = ctk.CTkFrame(export_frame, fg_color="transparent")
-        export_content.pack(padx=30, pady=30)
+        export_content.pack(padx=24, pady=24)
 
         ctk.CTkLabel(
             export_content,
             text="Export Options",
-            font=ctk.CTkFont(size=20, weight="bold")
-        ).pack(pady=(0, 20))
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(0, 12), anchor="w")
 
         # Enterprise Reports Section
-        enterprise_frame = ctk.CTkFrame(export_content, fg_color=COLORS['bg_tertiary'], corner_radius=15)
+        enterprise_frame = ctk.CTkFrame(export_content, fg_color=COLORS['bg_tertiary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
         enterprise_frame.pack(fill="x", pady=10, padx=10)
 
         ctk.CTkLabel(
             enterprise_frame,
-            text="🌟 Enterprise Reports (Beautiful & Professional)",
-            font=ctk.CTkFont(size=18, weight="bold"),
+            text="Enterprise Reports",
+            font=ctk.CTkFont(size=15, weight="bold"),
             text_color=COLORS['accent_primary']
-        ).pack(pady=(20, 15))
+        ).pack(pady=(16, 12), padx=16, anchor="w")
 
         enterprise_buttons = ctk.CTkFrame(enterprise_frame, fg_color="transparent")
-        enterprise_buttons.pack(pady=(0, 20))
+        enterprise_buttons.pack(padx=16, pady=(0, 16))
 
         enterprise_options = [
             ("Enterprise HTML", "🎨", self.export_enterprise_html),
@@ -2063,25 +2057,25 @@ Monitoring continues...
                 enterprise_buttons,
                 text=f"{icon} {text}",
                 command=command,
-                width=200,
-                height=70,
-                font=ctk.CTkFont(size=15, weight="bold"),
-                gradient_colors=[COLORS['accent_primary'], COLORS['accent_secondary']]
+                width=180,
+                height=44,
+                font=ctk.CTkFont(size=14, weight="bold"),
+                gradient_colors=[COLORS['accent_primary'], COLORS['accent_secondary']],
+                corner_radius=8
             )
-            btn.pack(side="left", padx=15)
+            btn.pack(side="left", padx=8)
 
-        # Standard Reports Section
+        # Standard Reports
         standard_frame = ctk.CTkFrame(export_content, fg_color="transparent")
-        standard_frame.pack(fill="x", pady=(30, 10))
+        standard_frame.pack(fill="x", pady=(16, 0))
 
         ctk.CTkLabel(
             standard_frame,
             text="Standard Reports",
-            font=ctk.CTkFont(size=16, weight="bold"),
+            font=ctk.CTkFont(size=15, weight="bold"),
             text_color=COLORS['text_primary']
-        ).pack(pady=(0, 15))
+        ).pack(pady=(0, 12), anchor="w")
 
-        # Grid layout for standard export buttons (better alignment)
         export_buttons_grid = ctk.CTkFrame(standard_frame, fg_color="transparent")
         export_buttons_grid.pack()
 
@@ -2094,16 +2088,18 @@ Monitoring continues...
         ]
 
         for idx, (text, icon, command) in enumerate(export_options):
-            btn = GradientButton(
+            btn = ctk.CTkButton(
                 export_buttons_grid,
                 text=f"{icon}\n{text}",
                 command=command,
-                width=140,
-                height=100,
-                font=ctk.CTkFont(size=14, weight="bold"),
-                gradient_colors=[COLORS['bg_quaternary'], COLORS['accent_primary']]
+                width=110,
+                height=70,
+                font=ctk.CTkFont(size=13, weight="bold"),
+                fg_color=COLORS['bg_tertiary'],
+                hover_color=COLORS['bg_quaternary'],
+                corner_radius=8
             )
-            btn.grid(row=0, column=idx, padx=8, pady=5)
+            btn.grid(row=0, column=idx, padx=6, pady=4)
 
         return page
 
@@ -2111,38 +2107,38 @@ Monitoring continues...
         """Create audit log page"""
         page = ctk.CTkFrame(parent, fg_color=COLORS['bg_primary'])
 
-        # Header
         header_frame = ctk.CTkFrame(page, fg_color="transparent")
-        header_frame.pack(fill="x", pady=20)
+        header_frame.pack(fill="x", padx=24, pady=(16, 12))
 
         ctk.CTkLabel(
             header_frame,
             text="Security Audit Log",
-            font=ctk.CTkFont(size=28, weight="bold"),
+            font=ctk.CTkFont(size=24, weight="bold"),
             text_color=COLORS['text_primary']
         ).pack(side="left")
 
-        # Clear button
         clear_btn = ctk.CTkButton(
             header_frame,
-            text="🗑️ Clear Log",
+            text="🗑️  Clear Log",
             command=self.clear_audit_log,
             fg_color=COLORS['danger'],
-            hover_color=COLORS['warning']
+            hover_color='#ff7b72',
+            height=36,
+            corner_radius=8
         )
-        clear_btn.pack(side="right", padx=10)
+        clear_btn.pack(side="right")
 
-        # Audit log display
-        log_frame = ctk.CTkFrame(page, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        log_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        log_frame = ctk.CTkFrame(page, fg_color=COLORS['bg_secondary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
+        log_frame.pack(fill="both", expand=True, padx=24, pady=(0, 16))
 
         self.audit_log = ctk.CTkTextbox(
             log_frame,
             fg_color=COLORS['bg_tertiary'],
             text_color=COLORS['text_primary'],
-            font=ctk.CTkFont(family="Courier", size=12)
+            font=ctk.CTkFont(family="Consolas", size=11),
+            corner_radius=8
         )
-        self.audit_log.pack(fill="both", expand=True, padx=20, pady=20)
+        self.audit_log.pack(fill="both", expand=True, padx=16, pady=16)
 
         return page
 
@@ -2150,13 +2146,15 @@ Monitoring continues...
         """Create settings page"""
         page = ctk.CTkScrollableFrame(parent, fg_color=COLORS['bg_primary'])
 
-        # Header
+        header_frame = ctk.CTkFrame(page, fg_color="transparent")
+        header_frame.pack(fill="x", padx=24, pady=(16, 12))
+
         ctk.CTkLabel(
-            page,
+            header_frame,
             text="Settings",
-            font=ctk.CTkFont(size=28, weight="bold"),
+            font=ctk.CTkFont(size=24, weight="bold"),
             text_color=COLORS['text_primary']
-        ).pack(pady=20)
+        ).pack(anchor="w")
 
         # Settings sections - load from config
         sections = [
@@ -2209,30 +2207,27 @@ Monitoring continues...
         self.settings_vars = {}
 
         for section in sections:
-            # Section frame
-            section_frame = ctk.CTkFrame(page, fg_color=COLORS['bg_secondary'], corner_radius=15)
-            section_frame.pack(fill="x", padx=20, pady=10)
+            section_frame = ctk.CTkFrame(page, fg_color=COLORS['bg_secondary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
+            section_frame.pack(fill="x", padx=24, pady=8)
 
-            # Section header
             ctk.CTkLabel(
                 section_frame,
                 text=section['title'],
-                font=ctk.CTkFont(size=20, weight="bold"),
+                font=ctk.CTkFont(size=16, weight="bold"),
                 text_color=COLORS['accent_primary']
-            ).pack(pady=(20, 15), padx=30, anchor="w")
+            ).pack(pady=(16, 10), padx=24, anchor="w")
 
             # Settings items
             for setting in section['settings']:
                 setting_name, setting_type, default, key = setting[:4]
 
                 setting_row = ctk.CTkFrame(section_frame, fg_color="transparent")
-                setting_row.pack(fill="x", padx=30, pady=10)
+                setting_row.pack(fill="x", padx=24, pady=6)
 
-                # Label
                 ctk.CTkLabel(
                     setting_row,
                     text=setting_name,
-                    font=ctk.CTkFont(size=14),
+                    font=ctk.CTkFont(size=13),
                     anchor="w"
                 ).pack(side="left", fill="x", expand=True)
 
@@ -2254,7 +2249,7 @@ Monitoring continues...
                         def callback():
                             new_value = setting_var.get()
                             logger.info(f"Setting '{setting_key}' toggled to: {new_value}")
-                            print(f"[SETTINGS] {setting_key} = {new_value}")
+                            logger.debug(f"[SETTINGS] {setting_key} = {new_value}")
 
                             # Update text indicator
                             text_widget.configure(
@@ -2341,18 +2336,18 @@ Monitoring continues...
         )
         self.settings_status_label.pack(pady=5)
 
-        # Save button
         save_frame = ctk.CTkFrame(page, fg_color="transparent")
-        save_frame.pack(fill="x", padx=20, pady=20)
+        save_frame.pack(fill="x", padx=24, pady=16)
 
         save_btn = GradientButton(
             save_frame,
             text="💾 Save Settings",
             command=self.save_settings,
-            width=200,
-            height=50,
-            font=ctk.CTkFont(size=16, weight="bold"),
-            gradient_colors=[COLORS['success'], COLORS['accent_secondary']]
+            width=180,
+            height=44,
+            font=ctk.CTkFont(size=15, weight="bold"),
+            gradient_colors=[COLORS['success'], COLORS['accent_secondary']],
+            corner_radius=8
         )
         save_btn.pack()
 
@@ -2362,67 +2357,59 @@ Monitoring continues...
         """Create about page"""
         page = ctk.CTkFrame(parent, fg_color=COLORS['bg_primary'])
 
-        # Center content
         content_frame = ctk.CTkFrame(page, fg_color="transparent")
         content_frame.pack(expand=True)
 
-        # Logo
         logo_label = ctk.CTkLabel(
             content_frame,
             text="🛡️",
-            font=ctk.CTkFont(size=120)
+            font=ctk.CTkFont(size=80)
         )
-        logo_label.pack(pady=20)
+        logo_label.pack(pady=(24, 12))
 
-        # Title
         ctk.CTkLabel(
             content_frame,
             text="AI-MailArmor Ultimate",
-            font=ctk.CTkFont(size=36, weight="bold"),
+            font=ctk.CTkFont(size=28, weight="bold"),
             text_color=COLORS['text_primary']
-        ).pack(pady=10)
+        ).pack(pady=8)
 
-        # Version
         version_text = "Version 6.0.1 Premium"
         if PYTHON_313_COMPAT:
-            version_text += " (Python 3.13 Compatible)"
+            version_text += "  •  Python 3.13 Compatible"
 
         ctk.CTkLabel(
             content_frame,
             text=version_text,
-            font=ctk.CTkFont(size=18),
+            font=ctk.CTkFont(size=14),
             text_color=COLORS['accent_primary']
         ).pack()
 
-        # Description
-        desc_frame = ctk.CTkFrame(content_frame, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        desc_frame.pack(pady=30, padx=50)
+        desc_frame = ctk.CTkFrame(content_frame, fg_color=COLORS['bg_secondary'], corner_radius=12,
+                                   border_width=1, border_color=COLORS['border'])
+        desc_frame.pack(pady=24, padx=40)
 
-        desc_text = """
-        The most advanced email security analysis platform featuring:
+        desc_text = """The most advanced email security analysis platform featuring:
 
-        ✨ Beautiful Modern UI with Animations
-        🤖 15+ Machine Learning Algorithms
-        🧠 Deep Learning Neural Networks
-        🎯 Complete MITRE ATT&CK Framework
-        🔍 Real-time Threat Detection
-        🌐 Global Threat Intelligence
-        📊 Advanced Analytics & Reporting
-        🔒 Comprehensive DNS Security Checks
-
-        Built with ❤️ for maximum security
-        """
+  XGBoost + Random Forest ML Ensemble
+  Anomaly Detection & Threat Scoring
+  Complete MITRE ATT&CK Framework
+  Real-time Threat Detection
+  Global Threat Intelligence
+  Advanced Analytics & Reporting
+  Comprehensive DNS Security Checks"""
 
         ctk.CTkLabel(
             desc_frame,
             text=desc_text,
-            font=ctk.CTkFont(size=14),
-            justify="left"
-        ).pack(padx=40, pady=30)
+            font=ctk.CTkFont(size=13),
+            justify="left",
+            text_color=COLORS['text_secondary']
+        ).pack(padx=32, pady=24)
 
-        # System info
-        info_frame = ctk.CTkFrame(content_frame, fg_color=COLORS['bg_secondary'], corner_radius=15)
-        info_frame.pack(fill="x", padx=50)
+        info_frame = ctk.CTkFrame(content_frame, fg_color=COLORS['bg_secondary'], corner_radius=12,
+                                   border_width=1, border_color=COLORS['border'])
+        info_frame.pack(fill="x", padx=40)
 
         ml_models = 0
         if self.analyzer and hasattr(self.analyzer, 'ml_engine') and hasattr(self.analyzer.ml_engine, 'models'):
@@ -2430,14 +2417,12 @@ Monitoring continues...
 
         ml_status = 'Enabled' if self.config.enable_ml else 'Disabled'
 
-        system_info = f"""
-        System Information:
-        • Platform: {platform.system()} {platform.release()}
-        • Python: {sys.version.split()[0]}
-        • ML Models: {ml_models}
-        • Device: {str(DEVICE) if TORCH_AVAILABLE else 'CPU'}
-        • ML Status: {ml_status}
-        """
+        system_info = f"""System Information:
+  Platform: {platform.system()} {platform.release()}
+  Python: {sys.version.split()[0]}
+  ML Models: {ml_models}
+  Device: {str(DEVICE) if TORCH_AVAILABLE else 'CPU'}
+  ML Status: {ml_status}"""
 
         ctk.CTkLabel(
             info_frame,
@@ -2445,7 +2430,7 @@ Monitoring continues...
             font=ctk.CTkFont(size=12),
             text_color=COLORS['text_secondary'],
             justify="left"
-        ).pack(padx=30, pady=20)
+        ).pack(padx=24, pady=16)
 
         return page
 
@@ -2467,37 +2452,35 @@ Monitoring continues...
                     tactics_dict[tactic] = []
                 tactics_dict[tactic].append((tech_id, details))
 
-            # Create cards for each tactic
             for i, (tactic, techniques) in enumerate(tactics_dict.items()):
-                card = ctk.CTkFrame(self.mitre_techniques_frame, fg_color=COLORS['bg_secondary'], corner_radius=15)
-                card.grid(row=i // 3, column=i % 3, padx=10, pady=10, sticky="nsew")
+                card = ctk.CTkFrame(self.mitre_techniques_frame, fg_color=COLORS['bg_secondary'],
+                                     corner_radius=12, border_width=1, border_color=COLORS['border'])
+                card.grid(row=i // 3, column=i % 3, padx=6, pady=6, sticky="nsew")
 
-                # Tactic header
-                header = ctk.CTkFrame(card, fg_color=COLORS['bg_tertiary'], corner_radius=10)
-                header.pack(fill="x", padx=15, pady=(15, 10))
+                header = ctk.CTkFrame(card, fg_color=COLORS['bg_tertiary'], corner_radius=8)
+                header.pack(fill="x", padx=12, pady=(12, 8))
 
                 ctk.CTkLabel(
                     header,
                     text=tactic,
-                    font=ctk.CTkFont(size=18, weight="bold"),
+                    font=ctk.CTkFont(size=15, weight="bold"),
                     text_color=COLORS['accent_primary']
-                ).pack(pady=10)
+                ).pack(pady=8)
 
-                # Techniques list
                 tech_frame = ctk.CTkFrame(card, fg_color="transparent")
-                tech_frame.pack(fill="both", expand=True, padx=15, pady=(0, 15))
+                tech_frame.pack(fill="both", expand=True, padx=12, pady=(0, 12))
 
-                for tech_id, details in techniques[:5]:  # Show top 5
-                    tech_item = ctk.CTkFrame(tech_frame, fg_color=COLORS['bg_quaternary'], corner_radius=8)
-                    tech_item.pack(fill="x", pady=3)
+                for tech_id, details in techniques[:5]:
+                    tech_item = ctk.CTkFrame(tech_frame, fg_color=COLORS['bg_quaternary'], corner_radius=6)
+                    tech_item.pack(fill="x", pady=2)
 
                     tech_content = ctk.CTkFrame(tech_item, fg_color="transparent")
-                    tech_content.pack(fill="x", padx=10, pady=8)
+                    tech_content.pack(fill="x", padx=10, pady=6)
 
                     ctk.CTkLabel(
                         tech_content,
-                        text=f"{tech_id}: {details['name']}",
-                        font=ctk.CTkFont(size=12, weight="bold"),
+                        text=f"{tech_id}: {details.get('name', 'Unknown')}",
+                        font=ctk.CTkFont(size=11, weight="bold"),
                         anchor="w"
                     ).pack(fill="x")
 
@@ -2556,9 +2539,9 @@ Monitoring continues...
         }
         for btn_name, btn in self.nav_buttons.items():
             if nav_to_page.get(btn_name) == page_name:
-                btn.configure(fg_color=COLORS['accent_primary'])
+                btn.configure(fg_color=COLORS['sidebar_active'], text_color=COLORS['text_primary'])
             else:
-                btn.configure(fg_color=COLORS['bg_tertiary'])
+                btn.configure(fg_color="transparent", text_color=COLORS['text_secondary'])
 
     # Navigation methods
     def show_dashboard(self):
@@ -2573,6 +2556,19 @@ Monitoring continues...
 
     def show_monitor(self):
         self.show_page('monitor')
+        # Start monitor on first visit (not at app startup)
+        if not self.monitor_running:
+            self.monitor_running = True
+            # Only start a new thread if the old one is gone (prevents duplicate threads)
+            if not hasattr(self, 'monitor_thread') or not self.monitor_thread.is_alive():
+                self.start_monitor_simulation()
+            if hasattr(self, 'monitor_status_label') and self.monitor_status_label.winfo_exists():
+                self.monitor_status_label.configure(
+                    text="● Monitor Active", text_color=COLORS['success']
+                )
+            # Reset pause button text when re-activating
+            if hasattr(self, 'monitor_pause_btn') and self.monitor_pause_btn.winfo_exists():
+                self.monitor_pause_btn.configure(text="Pause")
 
     def show_mitre(self):
         self.show_page('mitre')
@@ -2594,6 +2590,10 @@ Monitoring continues...
 
     def show_analytics(self):
         self.show_page('analytics')
+        try:
+            self.update_analytics_charts()
+        except Exception as e:
+            logger.debug(f"Could not refresh analytics on navigation: {e}")
 
     def show_reports(self):
         self.show_page('reports')
@@ -2624,7 +2624,7 @@ Monitoring continues...
 
             # Update ML status
             def post_ml_status():
-                if self.config.enable_ml and analyzer.ml_engine.is_initialized:
+                if self.config.enable_ml and analyzer.ml_engine and analyzer.ml_engine.is_initialized:
                     self.update_status(f"Ready - {len(analyzer.ml_engine.models)} ML models active")
                 else:
                     status_msg = "Ready"
@@ -2647,10 +2647,11 @@ Monitoring continues...
             # Hide progress after delay
             def hide_progress():
                 try:
-                    self.status_progress.set_progress(0)
+                    if hasattr(self, 'status_progress') and self.status_progress.winfo_exists():
+                        self.status_progress.set_progress(0)
                 except Exception:
                     pass
-            self.ui(lambda: self.root.after(2000, hide_progress))
+            self.ui(lambda: self.root.after(2000, lambda: self.ui(hide_progress)))
 
         threading.Thread(target=init, daemon=True).start()
 
@@ -2757,7 +2758,7 @@ Monitoring continues...
                 self.ui(self.display_analysis_results, result)
 
                 # Log activity
-                self.ui(self.log_activity, f"Analyzed: {email} - Risk: {result['risk_level']}")
+                self.ui(self.log_activity, f"Analyzed: {email} - Risk: {result.get('risk_level', 'unknown')}")
 
                 # Refresh ML page to show predictions
                 if hasattr(self, 'ml_models_frame'):
@@ -2768,7 +2769,7 @@ Monitoring continues...
 
             except Exception as e:
                 error_msg = str(e)
-                self.root.after(0, lambda msg=error_msg: messagebox.showerror("Error", f"Analysis failed: {msg}"))
+                self.ui(lambda msg=error_msg: messagebox.showerror("Error", f"Analysis failed: {msg}"))
                 logger.error(f"Analysis error: {e}")
             finally:
                 self.ui(self.reset_analysis_ui)
@@ -2780,6 +2781,9 @@ Monitoring continues...
         # Track result in UI thread (thread-safe)
         try:
             self.current_results.append(result)
+            # Cap results to prevent unbounded memory growth
+            if len(self.current_results) > 5000:
+                self.current_results = self.current_results[-5000:]
         except Exception as e:
             logger.debug(f"Could not append result: {e}")
 
@@ -2801,26 +2805,28 @@ Monitoring continues...
         # Email address
         ctk.CTkLabel(
             header_frame,
-            text=result['email'],
+            text=result.get('email', 'N/A'),
             font=ctk.CTkFont(size=16),
             text_color=COLORS['text_secondary']
         ).pack(side="left", padx=(20, 0))
 
         # Risk score card
-        risk_card = ctk.CTkFrame(self.results_column, fg_color=COLORS['bg_tertiary'], corner_radius=15)
+        risk_card = ctk.CTkFrame(self.results_column, fg_color=COLORS['bg_tertiary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
         risk_card.pack(fill="x", padx=30, pady=10)
 
         risk_content = ctk.CTkFrame(risk_card, fg_color="transparent")
         risk_content.pack(padx=30, pady=30)
 
         # Risk level indicator
+        risk_level = result.get('risk_level', 'unknown')
+        risk_score = result.get('risk_score', 0)
         risk_color = {
             'critical': COLORS['danger'],
             'high': COLORS['warning'],
-            'medium': '#ff8800',
+            'medium': '#d29922',
             'low': COLORS['success'],
             'minimal': COLORS['accent_secondary']
-        }.get(result['risk_level'], COLORS['text_primary'])
+        }.get(risk_level, COLORS['text_primary'])
 
         # Risk score display
         score_frame = ctk.CTkFrame(risk_content, fg_color="transparent")
@@ -2828,7 +2834,7 @@ Monitoring continues...
 
         ctk.CTkLabel(
             score_frame,
-            text=str(result['risk_score']),
+            text=str(risk_score),
             font=ctk.CTkFont(size=72, weight="bold"),
             text_color=risk_color
         ).pack(side="left")
@@ -2843,7 +2849,7 @@ Monitoring continues...
         # Risk level
         ctk.CTkLabel(
             risk_content,
-            text=f"Risk Level: {result['risk_level'].upper()}",
+            text=f"Risk Level: {risk_level.upper()}",
             font=ctk.CTkFont(size=24, weight="bold"),
             text_color=risk_color
         ).pack(pady=(20, 0))
@@ -2859,17 +2865,18 @@ Monitoring continues...
             text_color=COLORS['text_secondary']
         ).pack(side="left", padx=(0, 10))
 
-        email_for_feedback = result['email']
+        email_for_feedback = result.get('email', '')
         features_for_feedback = result.get('_ml_features')  # Per-result features (avoids race)
+        ensemble_for_feedback = result.get('_ml_ensemble_score', 0.5)  # Per-result score (avoids stale history)
 
         def on_feedback_safe():
             if self.analyzer:
-                self.analyzer.submit_feedback(email_for_feedback, 0, features=features_for_feedback)
+                self.analyzer.submit_feedback(email_for_feedback, 0, features=features_for_feedback, ensemble_score=ensemble_for_feedback)
                 feedback_label.configure(text="Marked as SAFE — thanks!", text_color=COLORS['success'])
 
         def on_feedback_risky():
             if self.analyzer:
-                self.analyzer.submit_feedback(email_for_feedback, 1, features=features_for_feedback)
+                self.analyzer.submit_feedback(email_for_feedback, 1, features=features_for_feedback, ensemble_score=ensemble_for_feedback)
                 feedback_label.configure(text="Marked as RISKY — thanks!", text_color=COLORS['danger'])
 
         safe_btn = ctk.CTkButton(
@@ -2895,7 +2902,7 @@ Monitoring continues...
 
         # Threats section
         if result.get('threats'):
-            threats_frame = ctk.CTkFrame(self.results_column, fg_color=COLORS['bg_tertiary'], corner_radius=15)
+            threats_frame = ctk.CTkFrame(self.results_column, fg_color=COLORS['bg_tertiary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
             threats_frame.pack(fill="x", padx=30, pady=10)
 
             threats_content = ctk.CTkFrame(threats_frame, fg_color="transparent")
@@ -2904,7 +2911,7 @@ Monitoring continues...
             ctk.CTkLabel(
                 threats_content,
                 text=f"🚨 {len(result['threats'])} Threat(s) Detected",
-                font=ctk.CTkFont(size=18, weight="bold"),
+                font=ctk.CTkFont(size=16, weight="bold"),
                 text_color=COLORS['danger']
             ).pack(pady=(0, 15))
 
@@ -2924,7 +2931,7 @@ Monitoring continues...
 
                 ctk.CTkLabel(
                     threat_text,
-                    text=f"{threat['type'].replace('_', ' ').title()}",
+                    text=f"{threat.get('type', '').replace('_', ' ').title()}",
                     font=ctk.CTkFont(size=14, weight="bold"),
                     text_color=severity_color,
                     anchor="w"
@@ -2932,7 +2939,7 @@ Monitoring continues...
 
                 ctk.CTkLabel(
                     threat_text,
-                    text=threat['description'],
+                    text=threat.get('description', 'No description available'),
                     font=ctk.CTkFont(size=12),
                     text_color=COLORS['text_secondary'],
                     anchor="w",
@@ -2941,7 +2948,7 @@ Monitoring continues...
 
         # ML Predictions
         if result.get('ml_predictions') and self.config.enable_ml:
-            ml_frame = ctk.CTkFrame(self.results_column, fg_color=COLORS['bg_tertiary'], corner_radius=15)
+            ml_frame = ctk.CTkFrame(self.results_column, fg_color=COLORS['bg_tertiary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
             ml_frame.pack(fill="x", padx=30, pady=10)
 
             ml_content = ctk.CTkFrame(ml_frame, fg_color="transparent")
@@ -2950,7 +2957,7 @@ Monitoring continues...
             ctk.CTkLabel(
                 ml_content,
                 text="🤖 Machine Learning Analysis",
-                font=ctk.CTkFont(size=18, weight="bold")
+                font=ctk.CTkFont(size=16, weight="bold")
             ).pack(pady=(0, 15))
 
             # Show top ML predictions (filter out non-numeric keys)
@@ -2990,7 +2997,7 @@ Monitoring continues...
 
         # DNS Security
         if result.get('dns_security'):
-            dns_frame = ctk.CTkFrame(self.results_column, fg_color=COLORS['bg_tertiary'], corner_radius=15)
+            dns_frame = ctk.CTkFrame(self.results_column, fg_color=COLORS['bg_tertiary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
             dns_frame.pack(fill="x", padx=30, pady=10)
 
             dns_content = ctk.CTkFrame(dns_frame, fg_color="transparent")
@@ -2999,208 +3006,318 @@ Monitoring continues...
             ctk.CTkLabel(
                 dns_content,
                 text="🔒 DNS Security Status",
-                font=ctk.CTkFont(size=18, weight="bold")
+                font=ctk.CTkFont(size=16, weight="bold")
             ).pack(pady=(0, 15))
 
-            dns_items = [
+            dns_items_row1 = [
                 ('SPF', result['dns_security'].get('spf', False)),
                 ('DMARC', result['dns_security'].get('dmarc', False)),
                 ('DKIM', result['dns_security'].get('dkim', False)),
                 ('DNSSEC', result['dns_security'].get('dnssec', False))
             ]
+            dns_items_row2 = [
+                ('BIMI', result['dns_security'].get('bimi', False)),
+                ('MTA-STS', result['dns_security'].get('mta_sts', False)),
+                ('TLS-RPT', result['dns_security'].get('tls_rpt', False))
+            ]
 
             dns_grid = ctk.CTkFrame(dns_content, fg_color="transparent")
             dns_grid.pack()
 
-            for i, (label, status) in enumerate(dns_items):
-                item_frame = ctk.CTkFrame(dns_grid, fg_color=COLORS['bg_quaternary'],
-                                          corner_radius=8, width=120, height=80)
-                item_frame.grid(row=0, column=i, padx=5, pady=5)
+            for row_idx, items in enumerate([dns_items_row1, dns_items_row2]):
+                for i, (label, status) in enumerate(items):
+                    item_frame = ctk.CTkFrame(dns_grid, fg_color=COLORS['bg_quaternary'],
+                                              corner_radius=8, width=120, height=80)
+                    item_frame.grid(row=row_idx, column=i, padx=5, pady=5)
+                    item_frame.pack_propagate(False)
+
+                    status_icon = "✅" if status else "❌"
+                    status_color = COLORS['success'] if status else COLORS['danger']
+
+                    ctk.CTkLabel(
+                        item_frame,
+                        text=status_icon,
+                        font=ctk.CTkFont(size=24)
+                    ).pack(pady=(10, 5))
+
+                    ctk.CTkLabel(
+                        item_frame,
+                        text=label,
+                        font=ctk.CTkFont(size=12),
+                        text_color=status_color
+                    ).pack()
+
+        # Advanced Security Checks — show section when checks ran (keys exist), not just when findings exist
+        has_advanced = any([
+            'dnsbl' in result, 'cert_transparency' in result,
+            'gravatar' in result, 'threatfox' in result,
+            'parked_domain' in result, 'dga_analysis' in result,
+        ])
+        if has_advanced:
+            adv_frame = ctk.CTkFrame(self.results_column, fg_color=COLORS['bg_tertiary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
+            adv_frame.pack(fill="x", padx=30, pady=10)
+
+            adv_content = ctk.CTkFrame(adv_frame, fg_color="transparent")
+            adv_content.pack(padx=30, pady=20)
+
+            ctk.CTkLabel(
+                adv_content,
+                text="🛡️ Advanced Security Checks",
+                font=ctk.CTkFont(size=16, weight="bold")
+            ).pack(pady=(0, 15))
+
+            adv_grid = ctk.CTkFrame(adv_content, fg_color="transparent")
+            adv_grid.pack(fill="x")
+
+            # Build items list dynamically
+            adv_items = []
+
+            # DNSBL
+            dnsbl = result.get('dnsbl') or {}
+            if dnsbl:
+                is_clean = not dnsbl.get('listed', False)
+                listed_count = dnsbl.get('listed_count', 0)
+                adv_items.append((
+                    'DNSBL',
+                    '✅ Clean' if is_clean else f'🚫 Listed ({listed_count})',
+                    COLORS['success'] if is_clean else COLORS['danger']
+                ))
+
+            # Certificate Transparency
+            ct = result.get('cert_transparency') or {}
+            if ct:
+                cert_count = ct.get('cert_count', 0)
+                adv_items.append((
+                    'Certificates',
+                    f'📜 {cert_count} cert(s)' if ct.get('found') else '❓ None found',
+                    COLORS['text_primary'] if ct.get('found') else COLORS['text_secondary']
+                ))
+
+            # DGA Detection
+            dga = result.get('dga_analysis') or {}
+            if dga:
+                is_clean = not dga.get('is_dga', False)
+                dga_score = float(dga.get('dga_score') or 0.0)
+                adv_items.append((
+                    'DGA Check',
+                    '✅ Normal' if is_clean else f'⚠️ DGA ({dga_score:.0%})',
+                    COLORS['success'] if is_clean else COLORS['warning']
+                ))
+
+            # Gravatar
+            gravatar = result.get('gravatar') or {}
+            if gravatar:
+                has_profile = gravatar.get('has_profile', False)
+                adv_items.append((
+                    'Gravatar',
+                    '👤 Profile found' if has_profile else '👻 No profile',
+                    COLORS['success'] if has_profile else COLORS['text_secondary']
+                ))
+
+            # ThreatFox
+            threatfox = result.get('threatfox') or {}
+            if threatfox:
+                is_clean = not threatfox.get('found', False)
+                ioc_count = threatfox.get('ioc_count', 0)
+                adv_items.append((
+                    'ThreatFox',
+                    '✅ Clean' if is_clean else f'☠️ {ioc_count} IOC(s)',
+                    COLORS['success'] if is_clean else COLORS['danger']
+                ))
+
+            # Parked Domain
+            parked = result.get('parked_domain') or {}
+            if parked:
+                is_parked = parked.get('is_parked', False)
+                adv_items.append((
+                    'Domain Status',
+                    '🅿️ Parked' if is_parked else '✅ Active',
+                    COLORS['warning'] if is_parked else COLORS['success']
+                ))
+
+            # Render items in a grid (3 columns per row)
+            for idx, (label, value, color) in enumerate(adv_items):
+                row = idx // 3
+                col = idx % 3
+
+                item_frame = ctk.CTkFrame(adv_grid, fg_color=COLORS['bg_quaternary'],
+                                          corner_radius=8, width=180, height=70)
+                item_frame.grid(row=row, column=col, padx=5, pady=5, sticky="ew")
                 item_frame.pack_propagate(False)
-
-                status_icon = "✅" if status else "❌"
-                status_color = COLORS['success'] if status else COLORS['danger']
-
-                ctk.CTkLabel(
-                    item_frame,
-                    text=status_icon,
-                    font=ctk.CTkFont(size=24)
-                ).pack(pady=(10, 5))
 
                 ctk.CTkLabel(
                     item_frame,
                     text=label,
-                    font=ctk.CTkFont(size=12),
-                    text_color=status_color
+                    font=ctk.CTkFont(size=11),
+                    text_color=COLORS['text_secondary']
+                ).pack(pady=(8, 2))
+
+                ctk.CTkLabel(
+                    item_frame,
+                    text=value,
+                    font=ctk.CTkFont(size=13, weight="bold"),
+                    text_color=color
                 ).pack()
 
-        # Breach Information (Enhanced) - Always show
-        breach_data = result.get('breach_info', {})
-        if breach_data:  # Show section if breach_info exists at all
-            if True:  # Always create the frame
-                breach_frame = ctk.CTkFrame(self.results_column, fg_color=COLORS['bg_tertiary'], corner_radius=15)
-                breach_frame.pack(fill="x", padx=30, pady=10)
+            # Configure grid columns to be even
+            for c in range(3):
+                adv_grid.columnconfigure(c, weight=1)
 
-                breach_content = ctk.CTkFrame(breach_frame, fg_color="transparent")
-                breach_content.pack(padx=30, pady=20)
+        # Breach Information (Enhanced) - Only show full section when breaches found
+        breach_data = result.get('breach_info') or {}
+        if breach_data.get('found'):
+            breach_frame = ctk.CTkFrame(self.results_column, fg_color=COLORS['bg_tertiary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
+            breach_frame.pack(fill="x", padx=30, pady=10)
 
-                # Header
-                severity_color = {
-                    'critical': COLORS['danger'],
-                    'high': COLORS['warning'],
-                    'medium': '#ff8800',
-                    'low': COLORS['success']
-                }.get(breach_data.get('severity', 'low'), COLORS['text_secondary'])
+            breach_content = ctk.CTkFrame(breach_frame, fg_color="transparent")
+            breach_content.pack(padx=30, pady=20)
 
-                header_text = "[ALERT]" if breach_data.get('found') else "[INFO]"
+            # Header
+            severity_color = {
+                'critical': COLORS['danger'],
+                'high': COLORS['warning'],
+                'medium': '#d29922',
+                'low': COLORS['success']
+            }.get(breach_data.get('severity', 'low'), COLORS['text_secondary'])
+
+            ctk.CTkLabel(
+                breach_content,
+                text="[ALERT] Data Breach Analysis",
+                font=ctk.CTkFont(size=16, weight="bold"),
+                text_color=severity_color
+            ).pack(pady=(0, 15))
+
+            # Breach summary
+            summary_frame = ctk.CTkFrame(breach_content, fg_color=COLORS['bg_quaternary'], corner_radius=10)
+            summary_frame.pack(fill="x", pady=10)
+
+            summary_content = ctk.CTkFrame(summary_frame, fg_color="transparent")
+            summary_content.pack(padx=20, pady=15)
+
+            ctk.CTkLabel(
+                summary_content,
+                text=f"This email appears in {breach_data.get('count', 0)} known data breach(es)",
+                font=ctk.CTkFont(size=14, weight="bold"),
+                text_color=COLORS['danger']
+            ).pack(anchor="w")
+
+            # Breach details
+            if breach_data.get('details'):
+                details_frame = ctk.CTkFrame(breach_content, fg_color=COLORS['bg_quaternary'], corner_radius=10)
+                details_frame.pack(fill="both", expand=True, pady=10)
+
+                # Scrollable frame for breach details
+                details_scroll = ctk.CTkScrollableFrame(
+                    details_frame,
+                    fg_color="transparent",
+                    height=200
+                )
+                details_scroll.pack(fill="both", expand=True, padx=15, pady=15)
+
                 ctk.CTkLabel(
-                    breach_content,
-                    text=f"{header_text} Data Breach Analysis",
-                    font=ctk.CTkFont(size=18, weight="bold"),
-                    text_color=severity_color
-                ).pack(pady=(0, 15))
+                    details_scroll,
+                    text="Breach Details:",
+                    font=ctk.CTkFont(size=13, weight="bold"),
+                    text_color=COLORS['text_primary']
+                ).pack(anchor="w", pady=(0, 10))
 
-                if breach_data.get('found'):
-                    # Breach summary
-                    summary_frame = ctk.CTkFrame(breach_content, fg_color=COLORS['bg_quaternary'], corner_radius=10)
-                    summary_frame.pack(fill="x", pady=10)
+                for breach in breach_data.get('details', []):
+                    if isinstance(breach, dict) and not breach.get('error'):
+                        breach_item = ctk.CTkFrame(details_scroll, fg_color=COLORS['bg_secondary'], corner_radius=8)
+                        breach_item.pack(fill="x", pady=5)
 
-                    summary_content = ctk.CTkFrame(summary_frame, fg_color="transparent")
-                    summary_content.pack(padx=20, pady=15)
+                        breach_item_content = ctk.CTkFrame(breach_item, fg_color="transparent")
+                        breach_item_content.pack(fill="x", padx=15, pady=10)
 
-                    ctk.CTkLabel(
-                        summary_content,
-                        text=f"This email appears in {breach_data['count']} known data breach(es)",
-                        font=ctk.CTkFont(size=14, weight="bold"),
-                        text_color=COLORS['danger']
-                    ).pack(anchor="w")
-
-                    # Breach details
-                    if breach_data.get('details'):
-                        details_frame = ctk.CTkFrame(breach_content, fg_color=COLORS['bg_quaternary'], corner_radius=10)
-                        details_frame.pack(fill="both", expand=True, pady=10)
-
-                        # Scrollable frame for breach details
-                        details_scroll = ctk.CTkScrollableFrame(
-                            details_frame,
-                            fg_color="transparent",
-                            height=200
-                        )
-                        details_scroll.pack(fill="both", expand=True, padx=15, pady=15)
-
+                        # Breach name and date
                         ctk.CTkLabel(
-                            details_scroll,
-                            text="Breach Details:",
+                            breach_item_content,
+                            text=f"{breach.get('title', breach.get('name', 'Unknown'))}",
                             font=ctk.CTkFont(size=13, weight="bold"),
-                            text_color=COLORS['text_primary']
-                        ).pack(anchor="w", pady=(0, 10))
-
-                        for breach in breach_data.get('details', []):
-                            if isinstance(breach, dict) and not breach.get('error'):
-                                breach_item = ctk.CTkFrame(details_scroll, fg_color=COLORS['bg_secondary'], corner_radius=8)
-                                breach_item.pack(fill="x", pady=5)
-
-                                breach_item_content = ctk.CTkFrame(breach_item, fg_color="transparent")
-                                breach_item_content.pack(fill="x", padx=15, pady=10)
-
-                                # Breach name and date
-                                ctk.CTkLabel(
-                                    breach_item_content,
-                                    text=f"{breach.get('title', breach.get('name', 'Unknown'))}",
-                                    font=ctk.CTkFont(size=13, weight="bold"),
-                                    text_color=COLORS['danger']
-                                ).pack(anchor="w")
-
-                                if breach.get('domain'):
-                                    ctk.CTkLabel(
-                                        breach_item_content,
-                                        text=f"Domain: {breach['domain']}",
-                                        font=ctk.CTkFont(size=11),
-                                        text_color=COLORS['text_secondary']
-                                    ).pack(anchor="w", pady=(2, 0))
-
-                                if breach.get('breach_date'):
-                                    ctk.CTkLabel(
-                                        breach_item_content,
-                                        text=f"Date: {breach['breach_date']}",
-                                        font=ctk.CTkFont(size=11),
-                                        text_color=COLORS['text_secondary']
-                                    ).pack(anchor="w", pady=(2, 0))
-
-                                if breach.get('description'):
-                                    ctk.CTkLabel(
-                                        breach_item_content,
-                                        text=f"Details: {breach['description']}",
-                                        font=ctk.CTkFont(size=11),
-                                        text_color=COLORS['text_secondary'],
-                                        wraplength=400,
-                                        justify="left"
-                                    ).pack(anchor="w", pady=(5, 0))
-
-                                if isinstance(breach.get('pwn_count'), (int, float)) and breach['pwn_count'] > 0:
-                                    ctk.CTkLabel(
-                                        breach_item_content,
-                                        text=f"Affected accounts: {int(breach['pwn_count']):,}",
-                                        font=ctk.CTkFont(size=11),
-                                        text_color=COLORS['text_secondary']
-                                    ).pack(anchor="w", pady=(2, 0))
-
-                                if breach.get('data_classes'):
-                                    data_text = ", ".join(str(dc) for dc in breach['data_classes'][:5])
-                                    if len(breach['data_classes']) > 5:
-                                        data_text += f" (+{len(breach['data_classes'])-5} more)"
-                                    ctk.CTkLabel(
-                                        breach_item_content,
-                                        text=f"Compromised data: {data_text}",
-                                        font=ctk.CTkFont(size=11),
-                                        text_color=COLORS['warning'],
-                                        wraplength=400
-                                    ).pack(anchor="w", pady=(2, 0))
-
-                    # Mitigation steps
-                    if breach_data.get('mitigation_steps'):
-                        mitigation_frame = ctk.CTkFrame(breach_content, fg_color=COLORS['bg_quaternary'], corner_radius=10)
-                        mitigation_frame.pack(fill="both", expand=True, pady=10)
-
-                        mitigation_scroll = ctk.CTkScrollableFrame(
-                            mitigation_frame,
-                            fg_color="transparent",
-                            height=250
-                        )
-                        mitigation_scroll.pack(fill="both", expand=True, padx=15, pady=15)
-
-                        ctk.CTkLabel(
-                            mitigation_scroll,
-                            text="[ACTION REQUIRED] Security Mitigation Steps:",
-                            font=ctk.CTkFont(size=14, weight="bold"),
                             text_color=COLORS['danger']
-                        ).pack(anchor="w", pady=(0, 10))
+                        ).pack(anchor="w")
 
-                        for step in breach_data['mitigation_steps']:
-                            step_label = ctk.CTkLabel(
-                                mitigation_scroll,
-                                text=step,
+                        if breach.get('domain'):
+                            ctk.CTkLabel(
+                                breach_item_content,
+                                text=f"Domain: {breach['domain']}",
                                 font=ctk.CTkFont(size=11),
-                                text_color=COLORS['text_primary'],
-                                anchor="w",
-                                wraplength=500,
+                                text_color=COLORS['text_secondary']
+                            ).pack(anchor="w", pady=(2, 0))
+
+                        if breach.get('breach_date'):
+                            ctk.CTkLabel(
+                                breach_item_content,
+                                text=f"Date: {breach['breach_date']}",
+                                font=ctk.CTkFont(size=11),
+                                text_color=COLORS['text_secondary']
+                            ).pack(anchor="w", pady=(2, 0))
+
+                        if breach.get('description'):
+                            ctk.CTkLabel(
+                                breach_item_content,
+                                text=f"Details: {breach['description']}",
+                                font=ctk.CTkFont(size=11),
+                                text_color=COLORS['text_secondary'],
+                                wraplength=400,
                                 justify="left"
-                            )
-                            step_label.pack(anchor="w", fill="x", pady=2)
-                else:
-                    # No breaches found
-                    ctk.CTkLabel(
-                        breach_content,
-                        text="Good news! This email was not found in any known data breaches.",
-                        font=ctk.CTkFont(size=13),
-                        text_color=COLORS['success'],
-                        wraplength=500
-                    ).pack(pady=10)
+                            ).pack(anchor="w", pady=(5, 0))
+
+                        if isinstance(breach.get('pwn_count'), (int, float)) and breach['pwn_count'] > 0:
+                            ctk.CTkLabel(
+                                breach_item_content,
+                                text=f"Affected accounts: {int(breach['pwn_count']):,}",
+                                font=ctk.CTkFont(size=11),
+                                text_color=COLORS['text_secondary']
+                            ).pack(anchor="w", pady=(2, 0))
+
+                        if breach.get('data_classes'):
+                            data_text = ", ".join(str(dc) for dc in breach['data_classes'][:5])
+                            if len(breach['data_classes']) > 5:
+                                data_text += f" (+{len(breach['data_classes'])-5} more)"
+                            ctk.CTkLabel(
+                                breach_item_content,
+                                text=f"Compromised data: {data_text}",
+                                font=ctk.CTkFont(size=11),
+                                text_color=COLORS['warning'],
+                                wraplength=400
+                            ).pack(anchor="w", pady=(2, 0))
+
+            # Mitigation steps
+            if breach_data.get('mitigation_steps'):
+                mitigation_frame = ctk.CTkFrame(breach_content, fg_color=COLORS['bg_quaternary'], corner_radius=10)
+                mitigation_frame.pack(fill="both", expand=True, pady=10)
+
+                mitigation_scroll = ctk.CTkScrollableFrame(
+                    mitigation_frame,
+                    fg_color="transparent",
+                    height=250
+                )
+                mitigation_scroll.pack(fill="both", expand=True, padx=15, pady=15)
+
+                ctk.CTkLabel(
+                    mitigation_scroll,
+                    text="[ACTION REQUIRED] Security Mitigation Steps:",
+                    font=ctk.CTkFont(size=14, weight="bold"),
+                    text_color=COLORS['danger']
+                ).pack(anchor="w", pady=(0, 10))
+
+                for step in breach_data['mitigation_steps']:
+                    step_label = ctk.CTkLabel(
+                        mitigation_scroll,
+                        text=step,
+                        font=ctk.CTkFont(size=11),
+                        text_color=COLORS['text_primary'],
+                        anchor="w",
+                        wraplength=500,
+                        justify="left"
+                    )
+                    step_label.pack(anchor="w", fill="x", pady=2)
 
         # Password Breach Information
-        password_breach = result.get('password_breach', {})
+        password_breach = result.get('password_breach') or {}
         if password_breach and password_breach.get('details') and 'No password' not in password_breach.get('details', ''):
-            pw_frame = ctk.CTkFrame(self.results_column, fg_color=COLORS['bg_tertiary'], corner_radius=15)
+            pw_frame = ctk.CTkFrame(self.results_column, fg_color=COLORS['bg_tertiary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
             pw_frame.pack(fill="x", padx=30, pady=10)
 
             pw_content = ctk.CTkFrame(pw_frame, fg_color="transparent")
@@ -3216,7 +3333,7 @@ Monitoring continues...
             ctk.CTkLabel(
                 pw_content,
                 text=pw_header_text,
-                font=ctk.CTkFont(size=18, weight="bold"),
+                font=ctk.CTkFont(size=16, weight="bold"),
                 text_color=pw_header_color
             ).pack(pady=(0, 15))
 
@@ -3278,7 +3395,7 @@ Monitoring continues...
 
         # Recommendations
         if result.get('recommendations'):
-            rec_frame = ctk.CTkFrame(self.results_column, fg_color=COLORS['bg_tertiary'], corner_radius=15)
+            rec_frame = ctk.CTkFrame(self.results_column, fg_color=COLORS['bg_tertiary'], corner_radius=12, border_width=1, border_color=COLORS['border'])
             rec_frame.pack(fill="x", padx=30, pady=10)
 
             rec_content = ctk.CTkFrame(rec_frame, fg_color="transparent")
@@ -3287,7 +3404,7 @@ Monitoring continues...
             ctk.CTkLabel(
                 rec_content,
                 text="💡 Security Recommendations",
-                font=ctk.CTkFont(size=18, weight="bold")
+                font=ctk.CTkFont(size=16, weight="bold")
             ).pack(pady=(0, 15))
 
             for rec in result['recommendations'][:5]:
@@ -3341,10 +3458,12 @@ Monitoring continues...
             except Exception:
                 pass
 
-        # Update analytics charts if they exist
+        # Update analytics charts only if analytics page is visible
         if hasattr(self, 'heatmap_ax'):
             try:
-                self.update_analytics_charts()
+                if hasattr(self, 'pages') and self.pages.get('analytics') and \
+                        self.pages['analytics'].winfo_ismapped():
+                    self.update_analytics_charts()
             except Exception as e:
                 logger.debug(f"Could not update analytics charts: {e}")
 
@@ -3378,7 +3497,8 @@ Monitoring continues...
         """Stop the current bulk analysis"""
         if hasattr(self, 'bulk_processor') and self.bulk_processor:
             self.bulk_processor.cancel()
-        self.bulk_progress_label.configure(text="Stopping...")
+        if hasattr(self, 'bulk_progress_label') and self.bulk_progress_label.winfo_exists():
+            self.bulk_progress_label.configure(text="Stopping...")
         self.update_status("Stopping bulk analysis...")
 
     def process_bulk(self):
@@ -3433,17 +3553,17 @@ Monitoring continues...
                     self.ui(self.update_status, "Bulk analysis stopped")
                 else:
                     # Display results
-                    self.root.after(0, self.display_bulk_results, result)
+                    self.ui(self.display_bulk_results, result)
                     self.ui(self.log_activity, f"Bulk analysis completed: {len(emails)} emails processed")
 
             except Exception as e:
                 error_msg = str(e)
                 logger.error(f"Bulk processing error: {e}", exc_info=True)
-                self.root.after(0, lambda msg=error_msg: messagebox.showerror("Error", f"Processing failed: {msg}"))
+                self.ui(lambda msg=error_msg: messagebox.showerror("Error", f"Processing failed: {msg}"))
             finally:
                 # Toggle buttons back: enable Start, disable Stop
-                self.root.after(0, lambda: self.process_btn.configure(state="normal"))
-                self.root.after(0, lambda: self.stop_bulk_btn.configure(state="disabled"))
+                self.ui(lambda: self.process_btn.configure(state="normal"))
+                self.ui(lambda: self.stop_bulk_btn.configure(state="disabled"))
 
         threading.Thread(target=process_thread, daemon=True).start()
 
@@ -3452,12 +3572,19 @@ Monitoring continues...
         # Track results in UI thread (thread-safe)
         try:
             self.current_results.extend(result.get('results', []))
+            # Cap results to prevent unbounded memory growth
+            if len(self.current_results) > 5000:
+                self.current_results = self.current_results[-5000:]
         except Exception as e:
             logger.debug(f"Could not extend results: {e}")
 
         stats = result.get('statistics', {})
         if not stats:
             self.bulk_progress_label.configure(text="Analysis completed but statistics unavailable")
+            self.bulk_progress_bar.set_progress(1.0)
+            self.update_header_stats()
+            self.refresh_dashboard()
+            self.update_status("Bulk analysis complete (no statistics)")
             return
 
         valid = max(stats.get('valid', 1), 1)
@@ -3505,11 +3632,11 @@ Top Domains:
 
             breach_count = 0
             for email_result in result.get('results', []):
-                breach_info = email_result.get('breach_info', {})
+                breach_info = email_result.get('breach_info') or {}
                 if breach_info.get('found'):
                     breach_count += 1
-                    summary += f"\n{breach_count}. Email: {email_result['email']}\n"
-                    summary += f"   Breach Count: {breach_info['count']}\n"
+                    summary += f"\n{breach_count}. Email: {email_result.get('email', 'N/A')}\n"
+                    summary += f"   Breach Count: {breach_info.get('count', 0)}\n"
                     summary += f"   Severity: {breach_info.get('severity', 'medium').upper()}\n"
 
                     if breach_info.get('details'):
@@ -3526,8 +3653,8 @@ Top Domains:
                                     data_types = ', '.join(str(dc) for dc in breach['data_classes'][:5])
                                     summary += f"     Data: {data_types}\n"
 
-                        if breach_info['count'] > 3:
-                            summary += f"   ... and {breach_info['count'] - 3} more breaches\n"
+                        if breach_info.get('count', 0) > 3:
+                            summary += f"   ... and {breach_info.get('count', 0) - 3} more breaches\n"
 
                     if breach_info.get('mitigation_steps'):
                         summary += f"\n   ACTIONS REQUIRED:\n"
@@ -3536,13 +3663,18 @@ Top Domains:
 
                     summary += "\n"
 
-        # Display summary
-        self.bulk_results.delete("0.0", tk.END)
-        self.bulk_results.insert("0.0", summary)
+        # Show results frame and display summary
+        if hasattr(self, 'bulk_results_frame') and self.bulk_results_frame.winfo_exists():
+            self.bulk_results_frame.pack(fill="both", expand=True, pady=10)
+        if hasattr(self, 'bulk_results') and self.bulk_results.winfo_exists():
+            self.bulk_results.delete("1.0", tk.END)
+            self.bulk_results.insert("1.0", summary)
 
         # Update progress
-        self.bulk_progress_label.configure(text="Analysis complete!")
-        self.bulk_progress_bar.set_progress(1.0)
+        if hasattr(self, 'bulk_progress_label') and self.bulk_progress_label.winfo_exists():
+            self.bulk_progress_label.configure(text="Analysis complete!")
+        if hasattr(self, 'bulk_progress_bar') and self.bulk_progress_bar.winfo_exists():
+            self.bulk_progress_bar.set_progress(1.0)
 
         # Update dashboard
         self.update_header_stats()
@@ -3593,14 +3725,20 @@ Top Domains:
                 reputation = self.analyzer.threat_intel.check_domain_reputation(domain)
 
                 # Update UI
-                self.root.after(0, self.display_dns_results, domain, dns_result, reputation)
+                self.ui(self.display_dns_results, domain, dns_result, reputation)
 
                 # Log activity
                 self.ui(self.log_activity, f"DNS check: {domain} - Score: {dns_result.get('score', 0)}")
 
             except Exception as e:
                 error_msg = str(e)
-                self.root.after(0, lambda msg=error_msg: messagebox.showerror("Error", f"DNS check failed: {msg}"))
+                def cleanup_and_error(msg=error_msg):
+                    if hasattr(self, 'dns_results') and self.dns_results.winfo_exists():
+                        for w in self.dns_results.winfo_children():
+                            w.destroy()
+                        self.dns_results.pack_forget()
+                    messagebox.showerror("Error", f"DNS check failed: {msg}")
+                self.ui(cleanup_and_error)
                 logger.error(f"DNS check error: {e}")
 
         threading.Thread(target=check_thread, daemon=True).start()
@@ -3658,7 +3796,10 @@ Top Domains:
             ('DMARC Policy', dns_result.get('dmarc'), 'Domain-based Message Authentication'),
             ('DKIM Support', dns_result.get('dkim'), 'DomainKeys Identified Mail'),
             ('MX Records', dns_result.get('mx'), 'Mail Exchange Records'),
-            ('DNSSEC', dns_result.get('dnssec'), 'DNS Security Extensions')
+            ('DNSSEC', dns_result.get('dnssec'), 'DNS Security Extensions'),
+            ('BIMI', dns_result.get('bimi'), 'Brand Indicators for Message Identification'),
+            ('MTA-STS', dns_result.get('mta_sts'), 'Mail Transfer Agent Strict Transport Security'),
+            ('TLS-RPT', dns_result.get('tls_rpt'), 'TLS Reporting Policy'),
         ]
 
         for check_name, status, description in checks:
@@ -3722,7 +3863,7 @@ Top Domains:
                 ).pack(pady=5)
 
             if reputation.get('flags'):
-                flags_text = "Flags: " + ", ".join(reputation['flags'])
+                flags_text = "Flags: " + ", ".join(str(f) for f in reputation['flags'])
                 ctk.CTkLabel(
                     rep_content,
                     text=flags_text,
@@ -3760,7 +3901,7 @@ Top Domains:
         critical = sum(1 for r in self.current_results if r.get('risk_level') == 'critical')
         threats = sum(1 for r in self.current_results if r.get('threats'))
         safe = sum(1 for r in self.current_results if r.get('risk_level') in ['low', 'minimal'])
-        avg_risk = np.mean([r.get('risk_score', 0) for r in self.current_results])
+        avg_risk = np.mean([(r.get('risk_score') or 0) for r in self.current_results])
 
         # Update stat cards
         card_updates = {
@@ -3802,10 +3943,10 @@ Top Domains:
                     threat_categories['Breach'] += 1
 
             dns_checked = result.get('analysis_flags', {}).get('dns', False)
-            if dns_checked and not result.get('dns_security', {}).get('spf'):
+            if dns_checked and not (result.get('dns_security') or {}).get('spf'):
                 threat_categories['DNS'] += 1
 
-            if result.get('domain_reputation', {}).get('score', 100) < 50:
+            if (result.get('domain_reputation') or {}).get('score', 100) < 50:
                 threat_categories['Domain'] += 1
 
         # Normalize radar values safely
@@ -3832,11 +3973,11 @@ Top Domains:
 
             if risk_counts:
                 colors_map = {
-                    'critical': '#ff3366',
-                    'high': '#ffaa00',
-                    'medium': '#ff8800',
-                    'low': '#00ff88',
-                    'minimal': '#00d4ff'
+                    'critical': '#f85149',
+                    'high': '#d29922',
+                    'medium': '#d29922',
+                    'low': '#3fb950',
+                    'minimal': '#4f8ff7'
                 }
 
                 labels = []
@@ -3859,7 +4000,7 @@ Top Domains:
                         autotext.set_color('white')
                         autotext.set_weight('bold')
 
-        self.risk_chart_ax.set_title('Risk Distribution', color='#ffffff', fontsize=14, pad=20)
+        self.risk_chart_ax.set_title('Risk Distribution', color='#e6edf3', fontsize=14, pad=20)
         self.risk_chart_canvas.draw()
 
         # Threat timeline
@@ -3869,19 +4010,19 @@ Top Domains:
             times = list(range(len(self.current_results)))
             scores = [r.get('risk_score', 0) for r in self.current_results]
 
-            self.timeline_ax.plot(times, scores, color='#00d4ff', linewidth=2, marker='o')
-            self.timeline_ax.fill_between(times, scores, alpha=0.3, color='#00d4ff')
+            self.timeline_ax.plot(times, scores, color='#4f8ff7', linewidth=2, marker='o')
+            self.timeline_ax.fill_between(times, scores, alpha=0.3, color='#4f8ff7')
 
-            self.timeline_ax.set_xlabel('Analysis #', color='#b0b0b0')
-            self.timeline_ax.set_ylabel('Risk Score', color='#b0b0b0')
-            self.timeline_ax.set_title('Risk Score Timeline', color='#ffffff', fontsize=14, pad=20)
-            self.timeline_ax.grid(True, alpha=0.3, color='#252525')
+            self.timeline_ax.set_xlabel('Analysis #', color='#8b949e')
+            self.timeline_ax.set_ylabel('Risk Score', color='#8b949e')
+            self.timeline_ax.set_title('Risk Score Timeline', color='#e6edf3', fontsize=14, pad=20)
+            self.timeline_ax.grid(True, alpha=0.3, color='#30363d')
 
             # Add risk level zones
-            self.timeline_ax.axhspan(80, 100, alpha=0.1, color='#ff3366')
-            self.timeline_ax.axhspan(60, 80, alpha=0.1, color='#ffaa00')
-            self.timeline_ax.axhspan(40, 60, alpha=0.1, color='#ff8800')
-            self.timeline_ax.axhspan(0, 40, alpha=0.1, color='#00ff88')
+            self.timeline_ax.axhspan(80, 100, alpha=0.1, color='#f85149')
+            self.timeline_ax.axhspan(60, 80, alpha=0.1, color='#d29922')
+            self.timeline_ax.axhspan(40, 60, alpha=0.1, color='#d29922')
+            self.timeline_ax.axhspan(0, 40, alpha=0.1, color='#3fb950')
 
         self.timeline_canvas.draw()
 
@@ -3906,11 +4047,11 @@ Top Domains:
                     # Define order and colors
                     level_order = ['critical', 'high', 'medium', 'low', 'minimal']
                     level_colors = {
-                        'critical': '#ff3366',
-                        'high': '#ffaa00',
-                        'medium': '#ff8800',
-                        'low': '#00ff88',
-                        'minimal': '#00d4ff'
+                        'critical': '#f85149',
+                        'high': '#d29922',
+                        'medium': '#d29922',
+                        'low': '#3fb950',
+                        'minimal': '#4f8ff7'
                     }
 
                     labels = []
@@ -3921,13 +4062,13 @@ Top Domains:
                         if level in risk_counts:
                             labels.append(level.upper())
                             sizes.append(risk_counts[level])
-                            colors.append(level_colors.get(level, '#808080'))
+                            colors.append(level_colors.get(level, '#6e7681'))
 
                     if sizes:
                         wedges, texts, autotexts = self.risk_dist_ax.pie(
                             sizes, labels=labels, colors=colors,
                             autopct='%1.1f%%', startangle=90,
-                            textprops={'color': '#ffffff', 'fontsize': 11, 'weight': 'bold'}
+                            textprops={'color': '#e6edf3', 'fontsize': 11, 'weight': 'bold'}
                         )
 
                         for autotext in autotexts:
@@ -3935,12 +4076,12 @@ Top Domains:
                             autotext.set_fontsize(10)
 
                         self.risk_dist_ax.set_title(f'Risk Distribution ({sum(sizes)} Emails)',
-                                                   color='#ffffff', fontsize=13, pad=10)
+                                                   color='#e6edf3', fontsize=13, pad=10)
                 else:
                     self.risk_dist_ax.text(0.5, 0.5, 'No data available\n\nAnalyze emails first',
                                           ha='center', va='center', transform=self.risk_dist_ax.transAxes,
-                                          color='#b0b0b0', fontsize=12)
-                    self.risk_dist_ax.set_title('Risk Distribution', color='#ffffff', fontsize=13)
+                                          color='#8b949e', fontsize=12)
+                    self.risk_dist_ax.set_title('Risk Distribution', color='#e6edf3', fontsize=13)
 
                 self.risk_dist_canvas.draw()
 
@@ -3963,35 +4104,37 @@ Top Domains:
                         types = [t[0] for t in top_threats]
                         counts = [t[1] for t in top_threats]
 
-                        bars = self.threat_types_ax.barh(types, counts, color='#ff3366', alpha=0.8, edgecolor='#ff6688')
+                        bars = self.threat_types_ax.barh(types, counts, color='#f85149', alpha=0.8, edgecolor='#ff7b72')
 
                         # Add value labels
                         for i, (bar, count) in enumerate(zip(bars, counts)):
                             self.threat_types_ax.text(bar.get_width() + 0.1, bar.get_y() + bar.get_height()/2,
                                                      str(count), ha='left', va='center',
-                                                     color='#b0b0b0', fontsize=9, weight='bold')
+                                                     color='#8b949e', fontsize=9, weight='bold')
 
-                        self.threat_types_ax.set_xlabel('Count', color='#b0b0b0', fontsize=10)
+                        self.threat_types_ax.set_xlabel('Count', color='#8b949e', fontsize=10)
                         self.threat_types_ax.set_title(f'Top Threat Types ({sum(counts)} Total)',
-                                                      color='#ffffff', fontsize=13, pad=10)
-                        self.threat_types_ax.tick_params(colors='#b0b0b0', labelsize=9)
+                                                      color='#e6edf3', fontsize=13, pad=10)
+                        self.threat_types_ax.tick_params(colors='#8b949e', labelsize=9)
                         self.threat_types_ax.grid(axis='x', alpha=0.2)
                         self.threat_types_ax.invert_yaxis()
                     else:
                         self.threat_types_ax.text(0.5, 0.5, 'No threats detected\n\nAll emails appear safe',
                                                  ha='center', va='center', transform=self.threat_types_ax.transAxes,
-                                                 color='#00ff88', fontsize=12, weight='bold')
-                        self.threat_types_ax.set_title('Top Threat Types', color='#ffffff', fontsize=13)
+                                                 color='#3fb950', fontsize=12, weight='bold')
+                        self.threat_types_ax.set_title('Top Threat Types', color='#e6edf3', fontsize=13)
                 else:
                     self.threat_types_ax.text(0.5, 0.5, 'No data available\n\nAnalyze emails first',
                                              ha='center', va='center', transform=self.threat_types_ax.transAxes,
-                                             color='#b0b0b0', fontsize=12)
-                    self.threat_types_ax.set_title('Top Threat Types', color='#ffffff', fontsize=13)
+                                             color='#8b949e', fontsize=12)
+                    self.threat_types_ax.set_title('Top Threat Types', color='#e6edf3', fontsize=13)
 
                 self.threat_types_canvas.draw()
 
-            # Risk heatmap
-            self.heatmap_ax.clear()
+            # Risk heatmap — recreate axes to avoid colorbar accumulation
+            self.heatmap_fig.clear()
+            self.heatmap_ax = self.heatmap_fig.add_subplot(111)
+            self.heatmap_ax.set_facecolor('#161b22')
 
             if self.current_results and len(self.current_results) > 0:
                 # Group by domain
@@ -4029,9 +4172,9 @@ Top Domains:
 
                         self.heatmap_ax.set_xticks(range(display_count))
                         self.heatmap_ax.set_xticklabels([f'Email {i + 1}' for i in range(display_count)],
-                                                        rotation=45, ha='right', color='#b0b0b0')
+                                                        rotation=45, ha='right', color='#8b949e')
                         self.heatmap_ax.set_yticks(range(len(domains)))
-                        self.heatmap_ax.set_yticklabels(domains, color='#b0b0b0')
+                        self.heatmap_ax.set_yticklabels(domains, color='#8b949e')
 
                         # Add colorbar (remove old one first if it exists)
                         if hasattr(self, '_heatmap_colorbar') and self._heatmap_colorbar is not None:
@@ -4040,38 +4183,38 @@ Top Domains:
                             except Exception:
                                 pass  # Ignore if removal fails
                         self._heatmap_colorbar = self.heatmap_fig.colorbar(im, ax=self.heatmap_ax)
-                        self._heatmap_colorbar.set_label('Risk Score', color='#b0b0b0')
-                        self._heatmap_colorbar.ax.tick_params(colors='#b0b0b0')
+                        self._heatmap_colorbar.set_label('Risk Score', color='#8b949e')
+                        self._heatmap_colorbar.ax.tick_params(colors='#8b949e')
 
                         # Add values as text
                         for i, domain_scores in enumerate(risk_matrix_array):
                             for j, score in enumerate(domain_scores):
                                 if not np.isnan(score):
-                                    text_color = '#000000' if score < 50 else '#ffffff'
+                                    text_color = '#000000' if score < 50 else '#e6edf3'
                                     self.heatmap_ax.text(j, i, f'{int(score)}',
                                                         ha='center', va='center',
                                                         color=text_color, fontsize=9, weight='bold')
 
                         self.heatmap_ax.set_title('Risk Heatmap by Domain (Top 10 Highest Risk)',
-                                                 color='#ffffff', fontsize=14, pad=10)
+                                                 color='#e6edf3', fontsize=14, pad=10)
                     else:
                         # No valid data
                         self.heatmap_ax.text(0.5, 0.5, 'No risk data available\nAnalyze emails to see heatmap',
                                            ha='center', va='center', transform=self.heatmap_ax.transAxes,
-                                           color='#b0b0b0', fontsize=14)
-                        self.heatmap_ax.set_title('Risk Heatmap by Domain', color='#ffffff', fontsize=14)
+                                           color='#8b949e', fontsize=14)
+                        self.heatmap_ax.set_title('Risk Heatmap by Domain', color='#e6edf3', fontsize=14)
                 else:
                     # No domains found
                     self.heatmap_ax.text(0.5, 0.5, 'No domains found\nAnalyze emails to see heatmap',
                                        ha='center', va='center', transform=self.heatmap_ax.transAxes,
-                                       color='#b0b0b0', fontsize=14)
-                    self.heatmap_ax.set_title('Risk Heatmap by Domain', color='#ffffff', fontsize=14)
+                                       color='#8b949e', fontsize=14)
+                    self.heatmap_ax.set_title('Risk Heatmap by Domain', color='#e6edf3', fontsize=14)
             else:
                 # No results available - show placeholder
                 self.heatmap_ax.text(0.5, 0.5, 'No analysis data available\n\nGo to "Analysis" or "Bulk" page\nto analyze emails first',
                                    ha='center', va='center', transform=self.heatmap_ax.transAxes,
-                                   color='#b0b0b0', fontsize=14, style='italic')
-                self.heatmap_ax.set_title('Risk Heatmap by Domain', color='#ffffff', fontsize=14)
+                                   color='#8b949e', fontsize=14, style='italic')
+                self.heatmap_ax.set_title('Risk Heatmap by Domain', color='#e6edf3', fontsize=14)
                 self.heatmap_ax.set_xticks([])
                 self.heatmap_ax.set_yticks([])
 
@@ -4087,7 +4230,7 @@ Top Domains:
                     for r in self.current_results:
                         email = r.get('email', '')
                         domain = email.split('@')[1] if '@' in email else 'unknown'
-                        breach_info = r.get('breach_info', {})
+                        breach_info = r.get('breach_info') or {}
 
                         if domain not in domain_breaches:
                             domain_breaches[domain] = {'count': 0, 'total': 0}
@@ -4112,35 +4255,35 @@ Top Domains:
                             domains = [d[0] for d in top_domains]
                             percentages = [d[1] for d in top_domains]
 
-                            bars = self.breach_stats_ax.barh(domains, percentages, color='#ff3366', alpha=0.8, edgecolor='#ff6688')
+                            bars = self.breach_stats_ax.barh(domains, percentages, color='#f85149', alpha=0.8, edgecolor='#ff7b72')
 
                             # Add labels showing count/total
                             for i, (bar, data) in enumerate(zip(bars, top_domains)):
                                 label = f'{data[2]}/{data[3]} ({data[1]:.0f}%)'
                                 self.breach_stats_ax.text(bar.get_width() + 1, bar.get_y() + bar.get_height()/2,
                                                          label, ha='left', va='center',
-                                                         color='#b0b0b0', fontsize=9, weight='bold')
+                                                         color='#8b949e', fontsize=9, weight='bold')
 
-                            self.breach_stats_ax.set_xlabel('Breach Rate (%)', color='#b0b0b0', fontsize=10)
+                            self.breach_stats_ax.set_xlabel('Breach Rate (%)', color='#8b949e', fontsize=10)
                             self.breach_stats_ax.set_xlim(0, 100)
                             self.breach_stats_ax.set_title('Breach Rate by Domain (Top 10)',
-                                                          color='#ffffff', fontsize=13, pad=10)
-                            self.breach_stats_ax.tick_params(colors='#b0b0b0', labelsize=9)
+                                                          color='#e6edf3', fontsize=13, pad=10)
+                            self.breach_stats_ax.tick_params(colors='#8b949e', labelsize=9)
                             self.breach_stats_ax.grid(axis='x', alpha=0.2)
                             self.breach_stats_ax.invert_yaxis()
                         else:
                             self.breach_stats_ax.text(0.5, 0.5, 'No breach data',
                                                      ha='center', va='center', transform=self.breach_stats_ax.transAxes,
-                                                     color='#b0b0b0', fontsize=12)
+                                                     color='#8b949e', fontsize=12)
                     else:
                         self.breach_stats_ax.text(0.5, 0.5, 'No breach data available',
                                                  ha='center', va='center', transform=self.breach_stats_ax.transAxes,
-                                                 color='#b0b0b0', fontsize=12)
+                                                 color='#8b949e', fontsize=12)
                 else:
                     self.breach_stats_ax.text(0.5, 0.5, 'No data available\n\nAnalyze emails first',
                                              ha='center', va='center', transform=self.breach_stats_ax.transAxes,
-                                             color='#b0b0b0', fontsize=12)
-                    self.breach_stats_ax.set_title('Breach Statistics', color='#ffffff', fontsize=13)
+                                             color='#8b949e', fontsize=12)
+                    self.breach_stats_ax.set_title('Breach Statistics', color='#e6edf3', fontsize=13)
 
                 self.breach_stats_canvas.draw()
 
@@ -4154,38 +4297,38 @@ Top Domains:
 
                     if risk_scores:
                         # Create histogram
-                        n, bins, patches = self.risk_hist_ax.hist(risk_scores, bins=20, color='#00d4ff',
-                                                                  alpha=0.7, edgecolor='#00ff88')
+                        n, bins, patches = self.risk_hist_ax.hist(risk_scores, bins=20, color='#4f8ff7',
+                                                                  alpha=0.7, edgecolor='#3fb950')
 
                         # Color bars based on risk level
                         for i, patch in enumerate(patches):
                             bin_center = (bins[i] + bins[i+1]) / 2
                             if bin_center >= 80:
-                                patch.set_facecolor('#ff3366')
+                                patch.set_facecolor('#f85149')
                             elif bin_center >= 60:
-                                patch.set_facecolor('#ffaa00')
+                                patch.set_facecolor('#d29922')
                             elif bin_center >= 40:
-                                patch.set_facecolor('#ff8800')
+                                patch.set_facecolor('#d29922')
                             else:
-                                patch.set_facecolor('#00ff88')
+                                patch.set_facecolor('#3fb950')
 
-                        self.risk_hist_ax.set_xlabel('Risk Score', color='#b0b0b0', fontsize=10)
-                        self.risk_hist_ax.set_ylabel('Frequency', color='#b0b0b0', fontsize=10)
+                        self.risk_hist_ax.set_xlabel('Risk Score', color='#8b949e', fontsize=10)
+                        self.risk_hist_ax.set_ylabel('Frequency', color='#8b949e', fontsize=10)
                         self.risk_hist_ax.set_title(f'Risk Score Distribution (Avg: {np.mean(risk_scores):.1f})',
-                                                   color='#ffffff', fontsize=13, pad=10)
-                        self.risk_hist_ax.tick_params(colors='#b0b0b0', labelsize=9)
+                                                   color='#e6edf3', fontsize=13, pad=10)
+                        self.risk_hist_ax.tick_params(colors='#8b949e', labelsize=9)
                         self.risk_hist_ax.grid(alpha=0.2)
 
                         # Add risk level zones
-                        self.risk_hist_ax.axvspan(80, 100, alpha=0.1, color='#ff3366')
-                        self.risk_hist_ax.axvspan(60, 80, alpha=0.1, color='#ffaa00')
-                        self.risk_hist_ax.axvspan(40, 60, alpha=0.1, color='#ff8800')
-                        self.risk_hist_ax.axvspan(0, 40, alpha=0.1, color='#00ff88')
+                        self.risk_hist_ax.axvspan(80, 100, alpha=0.1, color='#f85149')
+                        self.risk_hist_ax.axvspan(60, 80, alpha=0.1, color='#d29922')
+                        self.risk_hist_ax.axvspan(40, 60, alpha=0.1, color='#d29922')
+                        self.risk_hist_ax.axvspan(0, 40, alpha=0.1, color='#3fb950')
                 else:
                     self.risk_hist_ax.text(0.5, 0.5, 'No data available\n\nAnalyze emails first',
                                           ha='center', va='center', transform=self.risk_hist_ax.transAxes,
-                                          color='#b0b0b0', fontsize=12)
-                    self.risk_hist_ax.set_title('Risk Score Distribution', color='#ffffff', fontsize=13)
+                                          color='#8b949e', fontsize=12)
+                    self.risk_hist_ax.set_title('Risk Score Distribution', color='#e6edf3', fontsize=13)
 
                 self.risk_hist_canvas.draw()
 
@@ -4209,30 +4352,30 @@ Top Domains:
                         techniques = [t[0] for t in top_techniques]
                         counts = [t[1] for t in top_techniques]
 
-                        bars = self.mitre_top_ax.barh(techniques, counts, color='#4466ff', alpha=0.8, edgecolor='#6688ff')
+                        bars = self.mitre_top_ax.barh(techniques, counts, color='#58a6ff', alpha=0.8, edgecolor='#79b8ff')
 
                         # Add value labels
                         for i, (bar, count) in enumerate(zip(bars, counts)):
                             self.mitre_top_ax.text(bar.get_width() + 0.1, bar.get_y() + bar.get_height()/2,
                                                   str(count), ha='left', va='center',
-                                                  color='#b0b0b0', fontsize=9, weight='bold')
+                                                  color='#8b949e', fontsize=9, weight='bold')
 
-                        self.mitre_top_ax.set_xlabel('Frequency', color='#b0b0b0', fontsize=10)
+                        self.mitre_top_ax.set_xlabel('Frequency', color='#8b949e', fontsize=10)
                         self.mitre_top_ax.set_title(f'Top MITRE Techniques ({sum(counts)} Total)',
-                                                   color='#ffffff', fontsize=13, pad=10)
-                        self.mitre_top_ax.tick_params(colors='#b0b0b0', labelsize=8)
+                                                   color='#e6edf3', fontsize=13, pad=10)
+                        self.mitre_top_ax.tick_params(colors='#8b949e', labelsize=8)
                         self.mitre_top_ax.grid(axis='x', alpha=0.2)
                         self.mitre_top_ax.invert_yaxis()
                     else:
                         self.mitre_top_ax.text(0.5, 0.5, 'No MITRE techniques detected',
                                               ha='center', va='center', transform=self.mitre_top_ax.transAxes,
-                                              color='#b0b0b0', fontsize=12)
-                        self.mitre_top_ax.set_title('Top MITRE Techniques', color='#ffffff', fontsize=13)
+                                              color='#8b949e', fontsize=12)
+                        self.mitre_top_ax.set_title('Top MITRE Techniques', color='#e6edf3', fontsize=13)
                 else:
                     self.mitre_top_ax.text(0.5, 0.5, 'No data available\n\nAnalyze emails first',
                                           ha='center', va='center', transform=self.mitre_top_ax.transAxes,
-                                          color='#b0b0b0', fontsize=12)
-                    self.mitre_top_ax.set_title('Top MITRE Techniques', color='#ffffff', fontsize=13)
+                                          color='#8b949e', fontsize=12)
+                    self.mitre_top_ax.set_title('Top MITRE Techniques', color='#e6edf3', fontsize=13)
 
                 self.mitre_top_canvas.draw()
 
@@ -4246,7 +4389,7 @@ Top Domains:
 
                     model_scores = {}
                     for r in self.current_results:
-                        ml_preds = r.get('ml_predictions', {})
+                        ml_preds = r.get('ml_predictions') or {}
                         for key, val in ml_preds.items():
                             if key in skip_keys:
                                 continue
@@ -4258,7 +4401,7 @@ Top Domains:
 
                     # Also include ensemble if present
                     for r in self.current_results:
-                        ml_preds = r.get('ml_predictions', {})
+                        ml_preds = r.get('ml_predictions') or {}
                         if 'ensemble' in ml_preds and isinstance(ml_preds['ensemble'], (int, float)):
                             if 'ensemble' not in model_scores:
                                 model_scores['ensemble'] = []
@@ -4278,15 +4421,15 @@ Top Domains:
                                  '#9C27B0', '#00BCD4', '#FFC107'][:len(model_names)]
 
                         bars = self.ml_models_ax.bar(range(len(model_names)), scores,
-                                                     color=colors, alpha=0.8, edgecolor='#ffffff')
+                                                     color=colors, alpha=0.8, edgecolor='#e6edf3')
 
                         self.ml_models_ax.set_xticks(range(len(model_names)))
-                        self.ml_models_ax.set_xticklabels(model_names, rotation=45, ha='right', color='#b0b0b0')
-                        self.ml_models_ax.set_ylabel('Avg Risk Score (%)', color='#b0b0b0', fontsize=10)
+                        self.ml_models_ax.set_xticklabels(model_names, rotation=45, ha='right', color='#8b949e')
+                        self.ml_models_ax.set_ylabel('Avg Risk Score (%)', color='#8b949e', fontsize=10)
                         self.ml_models_ax.set_ylim(0, 100)
                         self.ml_models_ax.set_title(f'ML Model Performance ({len(self.current_results)} Emails)',
-                                                   color='#ffffff', fontsize=13, pad=10)
-                        self.ml_models_ax.tick_params(colors='#b0b0b0', labelsize=9)
+                                                   color='#e6edf3', fontsize=13, pad=10)
+                        self.ml_models_ax.tick_params(colors='#8b949e', labelsize=9)
                         self.ml_models_ax.grid(axis='y', alpha=0.2)
 
                         # Add value labels on bars
@@ -4294,17 +4437,17 @@ Top Domains:
                             height = bar.get_height()
                             self.ml_models_ax.text(bar.get_x() + bar.get_width()/2., height,
                                                   f'{score:.1f}%', ha='center', va='bottom',
-                                                  color='#ffffff', fontsize=9, weight='bold')
+                                                  color='#e6edf3', fontsize=9, weight='bold')
                     else:
                         self.ml_models_ax.text(0.5, 0.5, 'No ML predictions available\n\nML may be disabled',
                                               ha='center', va='center', transform=self.ml_models_ax.transAxes,
-                                              color='#ffaa00', fontsize=12, weight='bold')
-                        self.ml_models_ax.set_title('ML Model Performance', color='#ffffff', fontsize=13)
+                                              color='#d29922', fontsize=12, weight='bold')
+                        self.ml_models_ax.set_title('ML Model Performance', color='#e6edf3', fontsize=13)
                 else:
                     self.ml_models_ax.text(0.5, 0.5, 'No data available\n\nAnalyze emails first',
                                           ha='center', va='center', transform=self.ml_models_ax.transAxes,
-                                          color='#b0b0b0', fontsize=12)
-                    self.ml_models_ax.set_title('ML Model Performance', color='#ffffff', fontsize=13)
+                                          color='#8b949e', fontsize=12)
+                    self.ml_models_ax.set_title('ML Model Performance', color='#e6edf3', fontsize=13)
 
                 self.ml_models_canvas.draw()
 
@@ -4323,8 +4466,8 @@ Top Domains:
                     }
 
                     for r in self.current_results:
-                        ml_preds = r.get('ml_predictions', {})
-                        if 'ensemble' in ml_preds:
+                        ml_preds = r.get('ml_predictions') or {}
+                        if 'ensemble' in ml_preds and isinstance(ml_preds['ensemble'], (int, float)):
                             score = ml_preds['ensemble'] * 100  # Convert 0-1 to 0-100
                             if score >= 80:
                                 confidence_ranges['Very High (80-100%)'] += 1
@@ -4342,11 +4485,11 @@ Top Domains:
                     sizes = []
                     colors_list = []
                     color_map = {
-                        'Very High (80-100%)': '#ff3366',
-                        'High (60-80%)': '#ffaa00',
-                        'Medium (40-60%)': '#ff8800',
-                        'Low (20-40%)': '#00d4ff',
-                        'Very Low (0-20%)': '#00ff88'
+                        'Very High (80-100%)': '#f85149',
+                        'High (60-80%)': '#d29922',
+                        'Medium (40-60%)': '#d29922',
+                        'Low (20-40%)': '#4f8ff7',
+                        'Very Low (0-20%)': '#3fb950'
                     }
 
                     for label, count in confidence_ranges.items():
@@ -4360,11 +4503,11 @@ Top Domains:
                         wedges, texts, autotexts = self.ml_confidence_ax.pie(
                             sizes, labels=labels, colors=colors_list,
                             autopct='%1.1f%%', startangle=90, pctdistance=0.85,
-                            textprops={'color': '#ffffff', 'fontsize': 10, 'weight': 'bold'}
+                            textprops={'color': '#e6edf3', 'fontsize': 10, 'weight': 'bold'}
                         )
 
                         # Draw circle in center for doughnut effect
-                        centre_circle = plt.Circle((0, 0), 0.70, fc='#1a1a1a')
+                        centre_circle = plt.Circle((0, 0), 0.70, fc='#161b22')
                         self.ml_confidence_ax.add_artist(centre_circle)
 
                         for autotext in autotexts:
@@ -4372,17 +4515,17 @@ Top Domains:
                             autotext.set_fontsize(9)
 
                         self.ml_confidence_ax.set_title(f'ML Confidence Distribution ({sum(sizes)} Emails)',
-                                                       color='#ffffff', fontsize=13, pad=10)
+                                                       color='#e6edf3', fontsize=13, pad=10)
                     else:
                         self.ml_confidence_ax.text(0.5, 0.5, 'No ML predictions available\n\nML may be disabled',
                                                   ha='center', va='center', transform=self.ml_confidence_ax.transAxes,
-                                                  color='#ffaa00', fontsize=12, weight='bold')
-                        self.ml_confidence_ax.set_title('ML Confidence Distribution', color='#ffffff', fontsize=13)
+                                                  color='#d29922', fontsize=12, weight='bold')
+                        self.ml_confidence_ax.set_title('ML Confidence Distribution', color='#e6edf3', fontsize=13)
                 else:
                     self.ml_confidence_ax.text(0.5, 0.5, 'No data available\n\nAnalyze emails first',
                                               ha='center', va='center', transform=self.ml_confidence_ax.transAxes,
-                                              color='#b0b0b0', fontsize=12)
-                    self.ml_confidence_ax.set_title('ML Confidence Distribution', color='#ffffff', fontsize=13)
+                                              color='#8b949e', fontsize=12)
+                    self.ml_confidence_ax.set_title('ML Confidence Distribution', color='#e6edf3', fontsize=13)
 
                 self.ml_confidence_canvas.draw()
 
@@ -4401,9 +4544,9 @@ Top Domains:
 
                     for r in self.current_results:
                         risk_score = r.get('risk_score', 0)
-                        ml_preds = r.get('ml_predictions', {})
+                        ml_preds = r.get('ml_predictions') or {}
 
-                        if 'ensemble' in ml_preds:
+                        if 'ensemble' in ml_preds and isinstance(ml_preds['ensemble'], (int, float)):
                             ml_score = ml_preds['ensemble']
 
                             if risk_score >= 80:
@@ -4421,10 +4564,10 @@ Top Domains:
                     counts = []
                     colors_list = []
                     color_map = {
-                        'Critical (80-100)': '#ff3366',
-                        'High (60-80)': '#ffaa00',
-                        'Medium (40-60)': '#ff8800',
-                        'Low (0-40)': '#00ff88'
+                        'Critical (80-100)': '#f85149',
+                        'High (60-80)': '#d29922',
+                        'Medium (40-60)': '#d29922',
+                        'Low (0-40)': '#3fb950'
                     }
 
                     for level in ['Critical (80-100)', 'High (60-80)', 'Medium (40-60)', 'Low (0-40)']:
@@ -4436,32 +4579,32 @@ Top Domains:
 
                     if risk_levels:
                         bars = self.ml_risk_ax.barh(risk_levels, avg_scores, color=colors_list,
-                                                    alpha=0.8, edgecolor='#ffffff')
+                                                    alpha=0.8, edgecolor='#e6edf3')
 
                         # Add labels showing count and average
                         for bar, avg, count in zip(bars, avg_scores, counts):
                             label = f'{avg:.1f}% (n={count})'
                             self.ml_risk_ax.text(bar.get_width() + 1, bar.get_y() + bar.get_height()/2,
                                                 label, ha='left', va='center',
-                                                color='#b0b0b0', fontsize=10, weight='bold')
+                                                color='#8b949e', fontsize=10, weight='bold')
 
-                        self.ml_risk_ax.set_xlabel('Average ML Score (%)', color='#b0b0b0', fontsize=11)
+                        self.ml_risk_ax.set_xlabel('Average ML Score (%)', color='#8b949e', fontsize=11)
                         self.ml_risk_ax.set_xlim(0, 100)
                         self.ml_risk_ax.set_title(f'ML Predictions by Risk Level ({sum(counts)} Emails)',
-                                                 color='#ffffff', fontsize=13, pad=10)
-                        self.ml_risk_ax.tick_params(colors='#b0b0b0', labelsize=10)
+                                                 color='#e6edf3', fontsize=13, pad=10)
+                        self.ml_risk_ax.tick_params(colors='#8b949e', labelsize=10)
                         self.ml_risk_ax.grid(axis='x', alpha=0.2)
                         self.ml_risk_ax.invert_yaxis()
                     else:
                         self.ml_risk_ax.text(0.5, 0.5, 'No ML predictions available\n\nML may be disabled',
                                             ha='center', va='center', transform=self.ml_risk_ax.transAxes,
-                                            color='#ffaa00', fontsize=12, weight='bold')
-                        self.ml_risk_ax.set_title('ML Predictions by Risk Level', color='#ffffff', fontsize=13)
+                                            color='#d29922', fontsize=12, weight='bold')
+                        self.ml_risk_ax.set_title('ML Predictions by Risk Level', color='#e6edf3', fontsize=13)
                 else:
                     self.ml_risk_ax.text(0.5, 0.5, 'No data available\n\nAnalyze emails first',
                                         ha='center', va='center', transform=self.ml_risk_ax.transAxes,
-                                        color='#b0b0b0', fontsize=12)
-                    self.ml_risk_ax.set_title('ML Predictions by Risk Level', color='#ffffff', fontsize=13)
+                                        color='#8b949e', fontsize=12)
+                    self.ml_risk_ax.set_title('ML Predictions by Risk Level', color='#e6edf3', fontsize=13)
 
                 self.ml_risk_canvas.draw()
 
@@ -4496,7 +4639,7 @@ Top Domains:
                             text=header,
                             font=ctk.CTkFont(size=11, weight="bold"),
                             width=width,
-                            text_color='#ffffff'
+                            text_color='#e6edf3'
                         ).grid(row=0, column=i, padx=2, pady=5)
 
                     # Add rows for each model
@@ -4553,8 +4696,8 @@ Top Domains:
                     self.confusion_ax.text(0.5, 0.5, 'No Email Analysis Yet\n\nConfusion matrix will appear after analyzing emails',
                                           ha='center', va='center',
                                           transform=self.confusion_ax.transAxes,
-                                          color='#b0b0b0', fontsize=12)
-                    self.confusion_ax.set_title('Confusion Matrix', color='#ffffff', fontsize=13)
+                                          color='#8b949e', fontsize=12)
+                    self.confusion_ax.set_title('Confusion Matrix', color='#e6edf3', fontsize=13)
                 elif ml_engine and hasattr(ml_engine, 'model_metrics') and ml_engine.model_metrics:
                     # Get ensemble or first model's confusion matrix
                     cm_data = None
@@ -4579,19 +4722,19 @@ Top Domains:
                         self.confusion_ax.set_xticks([0, 1])
                         self.confusion_ax.set_yticks([0, 1])
                         self.confusion_ax.set_xticklabels(['Predicted\nNegative', 'Predicted\nPositive'],
-                                                         color='#b0b0b0', fontsize=10)
+                                                         color='#8b949e', fontsize=10)
                         self.confusion_ax.set_yticklabels(['Actual\nNegative', 'Actual\nPositive'],
-                                                         color='#b0b0b0', fontsize=10)
+                                                         color='#8b949e', fontsize=10)
 
                         # Add text annotations
                         for i in range(2):
                             for j in range(2):
                                 text = self.confusion_ax.text(j, i, cm_array[i, j],
                                                              ha="center", va="center",
-                                                             color="#ffffff", fontsize=16, weight='bold')
+                                                             color="#e6edf3", fontsize=16, weight='bold')
 
                         self.confusion_ax.set_title('Training Confusion Matrix',
-                                                   color='#ffffff', fontsize=13, pad=10)
+                                                   color='#e6edf3', fontsize=13, pad=10)
 
                         # Add labels to cells
                         labels = [['TN', 'FP'], ['FN', 'TP']]
@@ -4604,14 +4747,14 @@ Top Domains:
                         self.confusion_ax.text(0.5, 0.5, 'No confusion matrix data',
                                               ha='center', va='center',
                                               transform=self.confusion_ax.transAxes,
-                                              color='#b0b0b0', fontsize=12)
-                        self.confusion_ax.set_title('Confusion Matrix', color='#ffffff', fontsize=13)
+                                              color='#8b949e', fontsize=12)
+                        self.confusion_ax.set_title('Confusion Matrix', color='#e6edf3', fontsize=13)
                 else:
                     self.confusion_ax.text(0.5, 0.5, 'No data available\n\nTrain ML models first',
                                           ha='center', va='center',
                                           transform=self.confusion_ax.transAxes,
-                                          color='#b0b0b0', fontsize=12)
-                    self.confusion_ax.set_title('Confusion Matrix', color='#ffffff', fontsize=13)
+                                          color='#8b949e', fontsize=12)
+                    self.confusion_ax.set_title('Confusion Matrix', color='#e6edf3', fontsize=13)
 
                 self.confusion_canvas.draw()
 
@@ -4646,7 +4789,7 @@ Top Domains:
                 content = self.activity_feed.get("1.0", tk.END)
                 lines = content.split('\n')
                 if len(lines) > 50:
-                    self.activity_feed.delete("50.0", tk.END)
+                    self.activity_feed.delete("51.0", tk.END)
             except Exception:
                 pass
 
@@ -4663,7 +4806,7 @@ Top Domains:
     def clear_audit_log(self):
         """Clear audit log"""
         if messagebox.askyesno("Confirm", "Are you sure you want to clear the audit log?"):
-            if hasattr(self, 'audit_log') and self.audit_log:
+            if hasattr(self, 'audit_log') and self.audit_log.winfo_exists():
                 self.audit_log.delete("1.0", tk.END)
             self.log_activity("Audit log cleared by user")
 
@@ -4725,8 +4868,8 @@ Top Domains:
             'high': sum(1 for r in self.current_results if r.get('risk_level') == 'high'),
             'medium': sum(1 for r in self.current_results if r.get('risk_level') == 'medium'),
             'low': sum(1 for r in self.current_results if r.get('risk_level') in ['low', 'minimal']),
-            'avg_risk': np.mean([r.get('risk_score', 0) for r in self.current_results]) if self.current_results else 0,
-            'breached': sum(1 for r in self.current_results if r.get('breach_info', {}).get('found')),
+            'avg_risk': np.mean([(r.get('risk_score') or 0) for r in self.current_results]) if self.current_results else 0,
+            'breached': sum(1 for r in self.current_results if (r.get('breach_info') or {}).get('found')),
             'total_threats': sum(len(r.get('threats', [])) for r in self.current_results)
         }
 
@@ -4757,8 +4900,8 @@ Top Domains:
             'high': sum(1 for r in self.current_results if r.get('risk_level') == 'high'),
             'medium': sum(1 for r in self.current_results if r.get('risk_level') == 'medium'),
             'low': sum(1 for r in self.current_results if r.get('risk_level') in ['low', 'minimal']),
-            'avg_risk': np.mean([r.get('risk_score', 0) for r in self.current_results]) if self.current_results else 0,
-            'breached': sum(1 for r in self.current_results if r.get('breach_info', {}).get('found')),
+            'avg_risk': np.mean([(r.get('risk_score') or 0) for r in self.current_results]) if self.current_results else 0,
+            'breached': sum(1 for r in self.current_results if (r.get('breach_info') or {}).get('found')),
             'total_threats': sum(len(r.get('threats', [])) for r in self.current_results),
             'mitre_techniques': sum(len(r.get('mitre_details', [])) for r in self.current_results)
         }
@@ -4792,7 +4935,7 @@ Top Domains:
                 threat_types.add(threat.get('type', 'unknown'))
 
         # Get breach statistics for threats
-        breached_threats = sum(1 for r in threats if r.get('breach_info', {}).get('found'))
+        breached_threats = sum(1 for r in threats if (r.get('breach_info') or {}).get('found'))
 
         stats = {
             'total_analyzed': len(self.current_results),
@@ -4841,7 +4984,7 @@ Top Domains:
         personal_data_at_risk = 0
 
         for result in self.current_results:
-            dns = result.get('dns_security', {})
+            dns = result.get('dns_security') or {}
 
             # DNS/Email Authentication Compliance
             if dns.get('spf'):
@@ -4858,7 +5001,7 @@ Top Domains:
                 dns_compliant += 1
 
             # GDPR Breach Notification Requirements (Article 33 & 34)
-            breach_info = result.get('breach_info', {})
+            breach_info = result.get('breach_info') or {}
             if breach_info.get('found'):
                 breached += 1
                 # High severity breaches require notification under GDPR
@@ -4870,7 +5013,8 @@ Top Domains:
             risk_level = result.get('risk_level', 'unknown')
             if risk_level in ['critical', 'high']:
                 high_risk += 1
-                personal_data_at_risk += 1
+                if not (breach_info.get('found') and breach_info.get('severity') in ['high', 'critical']):
+                    personal_data_at_risk += 1  # Only count once per email
 
             # Assume encrypted if no breach or low risk (simplified)
             if not breach_info.get('found') and risk_level in ['low', 'minimal']:
@@ -5018,7 +5162,7 @@ Top Domains:
                     'CustomTitle',
                     parent=styles['Heading1'],
                     fontSize=24,
-                    textColor=colors.HexColor('#00d4ff'),
+                    textColor=colors.HexColor('#4f8ff7'),
                     alignment=TA_CENTER,
                     spaceAfter=30
                 )
@@ -5027,7 +5171,7 @@ Top Domains:
                     'CustomHeading',
                     parent=styles['Heading2'],
                     fontSize=16,
-                    textColor=colors.HexColor('#00d4ff'),
+                    textColor=colors.HexColor('#4f8ff7'),
                     spaceAfter=12
                 )
 
@@ -5035,18 +5179,21 @@ Top Domains:
                 story.append(Paragraph("Email Security Analysis Report", title_style))
                 story.append(Spacer(1, 20))
 
+                # XML escape helper for reportlab Paragraph (uses XML internally)
+                from xml.sax.saxutils import escape as xml_esc
+
                 # Email info
                 email = result.get('email', 'N/A')
                 risk_level = result.get('risk_level', 'unknown').upper()
                 risk_score = result.get('risk_score', 0)
 
-                story.append(Paragraph(f"<b>Email:</b> {email}", styles['Normal']))
-                story.append(Paragraph(f"<b>Risk Level:</b> {risk_level}", styles['Normal']))
+                story.append(Paragraph(f"<b>Email:</b> {xml_esc(str(email))}", styles['Normal']))
+                story.append(Paragraph(f"<b>Risk Level:</b> {xml_esc(str(risk_level))}", styles['Normal']))
                 story.append(Paragraph(f"<b>Risk Score:</b> {risk_score}/100", styles['Normal']))
                 story.append(Spacer(1, 20))
 
                 # Breach Information
-                breach_info = result.get('breach_info', {})
+                breach_info = result.get('breach_info') or {}
                 if breach_info.get('found'):
                     story.append(Paragraph("🚨 Breach Information", heading_style))
                     story.append(Paragraph(f"<b>Breaches Found:</b> {breach_info.get('count', 0)}", styles['Normal']))
@@ -5056,45 +5203,45 @@ Top Domains:
                     if breach_info.get('details'):
                         for i, breach in enumerate(breach_info['details'][:5], 1):
                             if isinstance(breach, dict):
-                                breach_text = f"{i}. <b>{breach.get('name', 'Unknown')}</b>"
+                                breach_text = f"{i}. <b>{xml_esc(str(breach.get('name', 'Unknown')))}</b>"
                                 if breach.get('breach_date'):
-                                    breach_text += f" ({breach['breach_date']})"
+                                    breach_text += f" ({xml_esc(str(breach['breach_date']))})"
                                 story.append(Paragraph(breach_text, styles['Normal']))
 
                                 if breach.get('domain'):
-                                    story.append(Paragraph(f"   Domain: {breach['domain']}", styles['Normal']))
+                                    story.append(Paragraph(f"   Domain: {xml_esc(str(breach['domain']))}", styles['Normal']))
                                 if breach.get('data_classes'):
-                                    data = ', '.join(str(dc) for dc in breach['data_classes'][:5])
+                                    data = ', '.join(xml_esc(str(dc)) for dc in breach['data_classes'][:5])
                                     story.append(Paragraph(f"   Data: {data}", styles['Normal']))
                                 story.append(Spacer(1, 5))
 
                     # Add MITRE Techniques within breach section
                     if result.get('mitre_details'):
                         story.append(Spacer(1, 10))
-                        story.append(Paragraph("🎯 MITRE ATT&CK Techniques (Related to Breach)", heading_style))
+                        story.append(Paragraph("MITRE ATT&amp;CK Techniques (Related to Breach)", heading_style))
                         for tech in result['mitre_details'][:3]:  # Show top 3
-                            tech_text = f"<b>{tech.get('id', 'N/A')}: {tech.get('name', 'Unknown')}</b>"
+                            tech_text = f"<b>{xml_esc(str(tech.get('id', 'N/A')))}: {xml_esc(str(tech.get('name', 'Unknown')))}</b>"
                             story.append(Paragraph(tech_text, styles['Normal']))
-                            story.append(Paragraph(f"   Tactic: {tech.get('tactic', 'Unknown')} | Confidence: {tech.get('similarity', 0):.1f}%", styles['Normal']))
+                            story.append(Paragraph(f"   Tactic: {xml_esc(str(tech.get('tactic', 'Unknown')))} | Confidence: {tech.get('similarity', 0):.1f}%", styles['Normal']))
                             story.append(Spacer(1, 8))
 
                     story.append(Spacer(1, 20))
 
                 # MITRE Techniques (Full List - Separate Section)
                 if result.get('mitre_details'):
-                    story.append(Paragraph("🎯 MITRE ATT&CK Techniques (Complete Analysis)", heading_style))
+                    story.append(Paragraph("MITRE ATT&amp;CK Techniques (Complete Analysis)", heading_style))
                     for tech in result['mitre_details'][:5]:
-                        tech_text = f"<b>{tech.get('id', 'N/A')}: {tech.get('name', 'Unknown')}</b>"
+                        tech_text = f"<b>{xml_esc(str(tech.get('id', 'N/A')))}: {xml_esc(str(tech.get('name', 'Unknown')))}</b>"
                         story.append(Paragraph(tech_text, styles['Normal']))
-                        story.append(Paragraph(f"Tactic: {tech.get('tactic', 'Unknown')}", styles['Normal']))
+                        story.append(Paragraph(f"Tactic: {xml_esc(str(tech.get('tactic', 'Unknown')))}", styles['Normal']))
                         story.append(Paragraph(f"Confidence: {tech.get('similarity', 0):.1f}%", styles['Normal']))
                         story.append(Spacer(1, 10))
 
                 # Mitigation Steps
                 if breach_info.get('mitigation_steps'):
-                    story.append(Paragraph("🛡️ Recommended Actions", heading_style))
+                    story.append(Paragraph("Recommended Actions", heading_style))
                     for i, step in enumerate(breach_info['mitigation_steps'][:5], 1):
-                        story.append(Paragraph(f"{i}. {step}", styles['Normal']))
+                        story.append(Paragraph(f"{i}. {xml_esc(str(step))}", styles['Normal']))
                         story.append(Spacer(1, 5))
 
                 # Build PDF
@@ -5127,12 +5274,12 @@ Top Domains:
         """Generate HTML report for single analysis"""
         esc = html_mod.escape
         risk_color = {
-            'critical': '#ff3366',
-            'high': '#ffaa00',
-            'medium': '#ff8800',
-            'low': '#00ff88',
-            'minimal': '#00d4ff'
-        }.get(result.get('risk_level', 'unknown'), '#ffffff')
+            'critical': '#f85149',
+            'high': '#d29922',
+            'medium': '#d29922',
+            'low': '#3fb950',
+            'minimal': '#4f8ff7'
+        }.get(result.get('risk_level', 'unknown'), '#e6edf3')
 
         html = f"""<!DOCTYPE html>
 <html>
@@ -5141,8 +5288,8 @@ Top Domains:
     <style>
         body {{
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
-            color: #ffffff;
+            background: linear-gradient(135deg, #0f1117 0%, #161b22 100%);
+            color: #e6edf3;
             margin: 0;
             padding: 40px;
             min-height: 100vh;
@@ -5157,7 +5304,7 @@ Top Domains:
             box-shadow: 0 20px 40px rgba(0,0,0,0.5);
         }}
         h1 {{
-            background: linear-gradient(90deg, #00d4ff 0%, #00ff88 100%);
+            background: linear-gradient(90deg, #4f8ff7 0%, #3fb950 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-size: 48px;
@@ -5189,21 +5336,21 @@ Top Domains:
             margin: 20px 0;
         }}
         .section h2 {{
-            color: #00d4ff;
-            border-bottom: 2px solid #00d4ff;
+            color: #4f8ff7;
+            border-bottom: 2px solid #4f8ff7;
             padding-bottom: 10px;
             margin-bottom: 20px;
         }}
         .threat-item {{
             background: rgba(255,0,0,0.1);
-            border-left: 4px solid #ff3366;
+            border-left: 4px solid #f85149;
             padding: 15px;
             margin: 10px 0;
             border-radius: 8px;
         }}
         .recommendation {{
-            background: rgba(0,255,136,0.1);
-            border-left: 4px solid #00ff88;
+            background: rgba(63,185,80,0.1);
+            border-left: 4px solid #3fb950;
             padding: 15px;
             margin: 10px 0;
             border-radius: 8px;
@@ -5217,15 +5364,15 @@ Top Domains:
         }}
         .dns-check.active {{
             background: rgba(0,255,136,0.2);
-            color: #00ff88;
+            color: #3fb950;
         }}
         .dns-check.inactive {{
             background: rgba(255,51,102,0.2);
-            color: #ff3366;
+            color: #f85149;
         }}
         .timestamp {{
             text-align: center;
-            color: #808080;
+            color: #6e7681;
             margin-top: 40px;
         }}
     </style>
@@ -5264,21 +5411,21 @@ Top Domains:
         </div>"""
 
         # Breach Information Section
-        breach_info = result.get('breach_info', {})
+        breach_info = result.get('breach_info') or {}
         if breach_info and breach_info.get('found'):
             breach_severity = breach_info.get('severity', 'medium')
             severity_color = {
-                'critical': '#ff3366',
-                'high': '#ffaa00',
-                'medium': '#ff8800',
-                'low': '#00ff88'
-            }.get(breach_severity, '#ff8800')
+                'critical': '#f85149',
+                'high': '#d29922',
+                'medium': '#d29922',
+                'low': '#3fb950'
+            }.get(breach_severity, '#d29922')
 
             html += f"""
         <div class="section" style="border: 2px solid {severity_color};">
             <h2 style="color: {severity_color};">🚨 DATA BREACH DETECTED</h2>
             <p style="font-size: 16px; color: {severity_color}; font-weight: bold;">
-                This email appears in {breach_info['count']} known data breach(es)
+                This email appears in {breach_info.get('count', 0)} known data breach(es)
             </p>
             <p style="color: #ff6b6b;">
                 <strong>Severity:</strong> {esc(breach_severity.upper())}
@@ -5287,13 +5434,13 @@ Top Domains:
             # Breach details
             if breach_info.get('details'):
                 html += """
-            <h3 style="color: #00d4ff; margin-top: 30px;">Breach Details:</h3>"""
+            <h3 style="color: #4f8ff7; margin-top: 30px;">Breach Details:</h3>"""
 
                 for breach in breach_info['details']:
                     if isinstance(breach, dict):
                         html += f"""
             <div class="threat-item" style="background: rgba(255,51,102,0.2); margin: 15px 0;">
-                <h4 style="color: #ff3366; margin: 0 0 10px 0;">{esc(str(breach.get('title', breach.get('name', 'Unknown Breach'))))}</h4>"""
+                <h4 style="color: #f85149; margin: 0 0 10px 0;">{esc(str(breach.get('title', breach.get('name', 'Unknown Breach'))))}</h4>"""
 
                         if breach.get('domain'):
                             html += f"""
@@ -5322,8 +5469,8 @@ Top Domains:
             # Mitigation steps
             if breach_info.get('mitigation_steps'):
                 html += """
-            <h3 style="color: #00ff88; margin-top: 30px;">🛡️ IMMEDIATE ACTIONS REQUIRED:</h3>
-            <div style="background: rgba(0,255,136,0.1); padding: 20px; border-radius: 10px; border-left: 4px solid #00ff88;">"""
+            <h3 style="color: #3fb950; margin-top: 30px;">🛡️ IMMEDIATE ACTIONS REQUIRED:</h3>
+            <div style="background: rgba(63,185,80,0.1); padding: 20px; border-radius: 10px; border-left: 4px solid #3fb950;">"""
 
                 for i, step in enumerate(breach_info['mitigation_steps'], 1):
                     html += f"""
@@ -5336,19 +5483,19 @@ Top Domains:
             mitre_in_breach = result.get('mitre_details', [])
             if mitre_in_breach:
                 html += """
-            <h3 style="color: #4466ff; margin-top: 30px;">🎯 MITRE ATT&CK TECHNIQUES (RELATED TO BREACH):</h3>
-            <div style="background: rgba(68,102,255,0.1); padding: 20px; border-radius: 10px; border-left: 4px solid #4466ff;">"""
+            <h3 style="color: #58a6ff; margin-top: 30px;">🎯 MITRE ATT&CK TECHNIQUES (RELATED TO BREACH):</h3>
+            <div style="background: rgba(88,166,255,0.1); padding: 20px; border-radius: 10px; border-left: 4px solid #58a6ff;">"""
 
                 for technique in mitre_in_breach[:5]:  # Show top 5 techniques
                     similarity = technique.get('similarity', 0)
-                    confidence_color = '#00ff88' if similarity > 85 else '#ffaa00' if similarity > 70 else '#ff8800'
+                    confidence_color = '#3fb950' if similarity > 85 else '#d29922' if similarity > 70 else '#f85149'
 
                     html += f"""
                 <div style="background: rgba(0,0,0,0.3); padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 3px solid {confidence_color};">
                     <div style="color: {confidence_color}; font-weight: bold; font-size: 15px;">
                         {esc(str(technique.get('id', 'N/A')))}: {esc(str(technique.get('name', 'Unknown')))}
                     </div>
-                    <div style="color: #b0b0b0; font-size: 13px; margin-top: 5px;">
+                    <div style="color: #8b949e; font-size: 13px; margin-top: 5px;">
                         <strong>Tactic:</strong> {esc(str(technique.get('tactic', 'Unknown')))} |
                         <strong>Confidence:</strong> <span style="color: {confidence_color};">{similarity:.1f}%</span>
                     </div>
@@ -5365,28 +5512,28 @@ Top Domains:
         if mitre_details:
             html += """
         <div class="section">
-            <h2 style="color: #00d4ff;">🎯 MITRE ATT&CK Techniques</h2>
-            <p style="color: #b0b0b0; margin-bottom: 20px;">
+            <h2 style="color: #4f8ff7;">🎯 MITRE ATT&CK Techniques</h2>
+            <p style="color: #8b949e; margin-bottom: 20px;">
                 Attack techniques identified using offline MITRE ATT&CK framework with semantic analysis
             </p>"""
 
             for technique in mitre_details[:10]:  # Show top 10 techniques
                 similarity = technique.get('similarity', 0)
-                confidence_color = '#00ff88' if similarity > 85 else '#ffaa00' if similarity > 70 else '#ff8800'
+                confidence_color = '#3fb950' if similarity > 85 else '#d29922' if similarity > 70 else '#f85149'
 
                 html += f"""
             <div style="background: rgba(255,255,255,0.05); padding: 20px; margin: 15px 0; border-radius: 10px; border-left: 4px solid {confidence_color};">
-                <h4 style="color: #00d4ff; margin: 0 0 10px 0;">
+                <h4 style="color: #4f8ff7; margin: 0 0 10px 0;">
                     {esc(str(technique.get('id', 'N/A')))}: {esc(str(technique.get('name', 'Unknown')))}
                 </h4>
-                <p style="color: #b0b0b0; margin: 5px 0;">
+                <p style="color: #8b949e; margin: 5px 0;">
                     <strong>Tactic:</strong> {esc(str(technique.get('tactic', 'Unknown')))}
                 </p>
-                <p style="color: #b0b0b0; margin: 5px 0;">
+                <p style="color: #8b949e; margin: 5px 0;">
                     <strong>Confidence:</strong> <span style="color: {confidence_color};">{similarity:.1f}%</span>
                 </p>
                 <p style="color: #d0d0d0; margin: 10px 0 0 0; line-height: 1.6;">
-                    {esc(str(technique.get('description', 'No description available'))[:300])}...
+                    {esc(str(technique.get('description', 'No description available'))[:300])}{'...' if len(str(technique.get('description', ''))) > 300 else ''}
                 </p>
             </div>"""
 
@@ -5394,7 +5541,7 @@ Top Domains:
         </div>"""
 
         # DNS Security
-        dns = result.get('dns_security', {})
+        dns = result.get('dns_security') or {}
         if dns:
             html += """
         <div class="section">
@@ -5405,7 +5552,10 @@ Top Domains:
                 ('SPF', dns.get('spf', False)),
                 ('DMARC', dns.get('dmarc', False)),
                 ('DKIM', dns.get('dkim', False)),
-                ('DNSSEC', dns.get('dnssec', False))
+                ('DNSSEC', dns.get('dnssec', False)),
+                ('BIMI', dns.get('bimi', False)),
+                ('MTA-STS', dns.get('mta_sts', False)),
+                ('TLS-RPT', dns.get('tls_rpt', False)),
             ]
 
             for check, status in dns_checks:
@@ -5434,7 +5584,7 @@ Top Domains:
         </div>"""
 
         # ML Predictions
-        ml_preds = result.get('ml_predictions', {})
+        ml_preds = result.get('ml_predictions') or {}
         if ml_preds and self.config.enable_ml:
             html += """
         <div class="section">
@@ -5449,7 +5599,7 @@ Top Domains:
             numeric_preds = {k: v for k, v in ml_preds.items()
                             if k not in skip_keys and isinstance(v, (int, float))}
             for model, score in sorted(numeric_preds.items(), key=lambda x: x[1], reverse=True)[:5]:
-                color = '#ff3366' if score > 0.7 else '#ffaa00' if score > 0.5 else '#00ff88'
+                color = '#f85149' if score > 0.7 else '#d29922' if score > 0.5 else '#3fb950'
                 html += f"""
                 <tr>
                     <td style="padding: 10px;">{esc(model.replace('_', ' ').title())}</td>
@@ -5489,12 +5639,12 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
 """
 
         # Breach Information
-        breach_info = result.get('breach_info', {})
+        breach_info = result.get('breach_info') or {}
         if breach_info and breach_info.get('found'):
             report += "=" * 60 + "\n"
             report += "⚠️  DATA BREACH DETECTED\n"
             report += "=" * 60 + "\n\n"
-            report += f"This email appears in {breach_info['count']} known data breach(es)\n"
+            report += f"This email appears in {breach_info.get('count', 0)} known data breach(es)\n"
             report += f"Severity: {breach_info.get('severity', 'medium').upper()}\n\n"
 
             if breach_info.get('details'):
@@ -5568,10 +5718,14 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
         )
 
         if filename:
-            df = pd.DataFrame(self.current_results)
-            df.to_csv(filename, index=False)
-            messagebox.showinfo("Success", f"Exported to {filename}")
-            self.log_activity(f"Exported CSV report: {filename}")
+            try:
+                df = pd.DataFrame(self.current_results)
+                df.to_csv(filename, index=False)
+                messagebox.showinfo("Success", f"Exported to {filename}")
+                self.log_activity(f"Exported CSV report: {filename}")
+            except Exception as e:
+                logger.error(f"Error exporting CSV: {e}")
+                messagebox.showerror("Export Error", f"Failed to export CSV:\n{str(e)}")
 
     def export_excel(self):
         if not EXCEL_AVAILABLE:
@@ -5590,7 +5744,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
         if filename:
             with pd.ExcelWriter(filename, engine='openpyxl') as writer:
                 # Summary sheet
-                breached_count = sum(1 for r in self.current_results if r.get('breach_info', {}).get('found'))
+                breached_count = sum(1 for r in self.current_results if (r.get('breach_info') or {}).get('found'))
                 summary_data = {
                     'Metric': ['Total Emails', 'Critical Risk', 'High Risk', 'Medium Risk', 'Low Risk', 'Breached Emails'],
                     'Count': [
@@ -5608,7 +5762,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
                 # Main results sheet
                 main_data = []
                 for r in self.current_results:
-                    breach_info = r.get('breach_info', {})
+                    breach_info = r.get('breach_info') or {}
                     main_data.append({
                         'Email': r.get('email', 'N/A'),
                         'Risk Score': r.get('risk_score', 0),
@@ -5617,7 +5771,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
                         'Breach Count': breach_info.get('count', 0) if breach_info.get('found') else 0,
                         'Breach Severity': breach_info.get('severity', 'N/A').upper() if breach_info.get('found') else 'N/A',
                         'Threats': len(r.get('threats', [])),
-                        'DNS Score': r.get('dns_security', {}).get('score', 'N/A')
+                        'DNS Score': (r.get('dns_security') or {}).get('score', 'N/A')
                     })
                 df_main = pd.DataFrame(main_data)
                 df_main.to_excel(writer, sheet_name='Analysis Results', index=False)
@@ -5625,7 +5779,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
                 # Breach Details sheet (NEW!)
                 breach_details_data = []
                 for r in self.current_results:
-                    breach_info = r.get('breach_info', {})
+                    breach_info = r.get('breach_info') or {}
                     if breach_info.get('found') and breach_info.get('details'):
                         for breach in breach_info['details']:
                             if isinstance(breach, dict):
@@ -5648,7 +5802,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
                 # Mitigation Steps sheet (NEW!)
                 mitigation_data = []
                 for r in self.current_results:
-                    breach_info = r.get('breach_info', {})
+                    breach_info = r.get('breach_info') or {}
                     if breach_info.get('found') and breach_info.get('mitigation_steps'):
                         for i, step in enumerate(breach_info['mitigation_steps'], 1):
                             mitigation_data.append({
@@ -5720,11 +5874,15 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
         )
 
         if filename:
-            html = self.generate_full_html_report()
-            with open(filename, 'w', encoding='utf-8') as f:
-                f.write(html)
-            messagebox.showinfo("Success", f"Exported to {filename}")
-            self.log_activity(f"Exported HTML report: {filename}")
+            try:
+                html = self.generate_full_html_report()
+                with open(filename, 'w', encoding='utf-8') as f:
+                    f.write(html)
+                messagebox.showinfo("Success", f"Exported to {filename}")
+                self.log_activity(f"Exported HTML report: {filename}")
+            except Exception as e:
+                logger.error(f"Error exporting HTML: {e}")
+                messagebox.showerror("Export Error", f"Failed to export HTML:\n{str(e)}")
 
     def export_json(self):
         if not self.current_results:
@@ -5737,10 +5895,14 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
         )
 
         if filename:
-            with open(filename, 'w', encoding='utf-8') as f:
-                json.dump(self.current_results, f, indent=2, default=str, ensure_ascii=False)
-            messagebox.showinfo("Success", f"Exported to {filename}")
-            self.log_activity(f"Exported JSON report: {filename}")
+            try:
+                with open(filename, 'w', encoding='utf-8') as f:
+                    json.dump(self.current_results, f, indent=2, default=str, ensure_ascii=False)
+                messagebox.showinfo("Success", f"Exported to {filename}")
+                self.log_activity(f"Exported JSON report: {filename}")
+            except Exception as e:
+                logger.error(f"Error exporting JSON: {e}")
+                messagebox.showerror("Export Error", f"Failed to export JSON:\n{str(e)}")
 
     def export_enterprise_html(self):
         """Export beautiful enterprise-level HTML report"""
@@ -5967,6 +6129,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
         from reportlab.lib import colors
         from reportlab.lib.units import inch
         from reportlab.lib.enums import TA_CENTER, TA_LEFT
+        from xml.sax.saxutils import escape as xml_esc
 
         # Create PDF document
         doc = SimpleDocTemplate(filename, pagesize=letter,
@@ -5981,7 +6144,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
             'CustomTitle',
             parent=styles['Heading1'],
             fontSize=24,
-            textColor=colors.HexColor('#00d4ff'),
+            textColor=colors.HexColor('#4f8ff7'),
             spaceAfter=30,
             alignment=TA_CENTER
         )
@@ -5990,7 +6153,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
             'CustomHeading',
             parent=styles['Heading2'],
             fontSize=16,
-            textColor=colors.HexColor('#00d4ff'),
+            textColor=colors.HexColor('#4f8ff7'),
             spaceAfter=12,
             spaceBefore=20
         )
@@ -6006,7 +6169,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
             'high': sum(1 for r in self.current_results if r.get('risk_level') == 'high'),
             'medium': sum(1 for r in self.current_results if r.get('risk_level') == 'medium'),
             'low': sum(1 for r in self.current_results if r.get('risk_level') in ['low', 'minimal']),
-            'breached': sum(1 for r in self.current_results if r.get('breach_info', {}).get('found'))
+            'breached': sum(1 for r in self.current_results if (r.get('breach_info') or {}).get('found'))
         }
 
         stats_data = [
@@ -6020,7 +6183,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
 
         stats_table = Table(stats_data, colWidths=[3*inch, 2*inch])
         stats_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a1a1a')),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#161b22')),
             ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
@@ -6037,7 +6200,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
 
         table_data = [['Email', 'Risk Score', 'Risk Level', 'Breached']]
         for r in self.current_results[:50]:  # Limit to 50
-            breach_marker = 'YES' if r.get('breach_info', {}).get('found') else 'NO'
+            breach_marker = 'YES' if (r.get('breach_info') or {}).get('found') else 'NO'
             table_data.append([
                 r.get('email', 'N/A')[:40],  # Truncate long emails
                 str(r.get('risk_score', 0)),
@@ -6047,7 +6210,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
 
         results_table = Table(table_data, colWidths=[3*inch, 1*inch, 1.2*inch, 1*inch])
         results_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a1a1a')),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#161b22')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
@@ -6060,18 +6223,18 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
         story.append(results_table)
 
         # Breach details section
-        breached_emails = [r for r in self.current_results if r.get('breach_info', {}).get('found')]
+        breached_emails = [r for r in self.current_results if (r.get('breach_info') or {}).get('found')]
         if breached_emails:
             story.append(PageBreak())
             story.append(Paragraph("Detailed Breach Information", heading_style))
             story.append(Spacer(1, 0.2*inch))
 
             for email_result in breached_emails[:20]:  # Limit to 20
-                breach_info = email_result.get('breach_info', {})
+                breach_info = email_result.get('breach_info') or {}
 
                 # Email header
                 email_para = Paragraph(
-                    f"<b>{email_result['email']}</b> - {breach_info['count']} breach(es) - Severity: {breach_info.get('severity', 'medium').upper()}",
+                    f"<b>{xml_esc(str(email_result.get('email', 'N/A')))}</b> - {breach_info.get('count', 0)} breach(es) - Severity: {xml_esc(str(breach_info.get('severity', 'medium')).upper())}",
                     styles['Heading3']
                 )
                 story.append(email_para)
@@ -6081,13 +6244,13 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
                 if breach_info.get('details'):
                     for i, breach in enumerate(breach_info['details'][:3], 1):
                         if isinstance(breach, dict):
-                            breach_text = f"{i}. <b>{breach.get('name', 'Unknown')}</b>"
+                            breach_text = f"{i}. <b>{xml_esc(str(breach.get('name', 'Unknown')))}</b>"
                             if breach.get('breach_date'):
-                                breach_text += f" ({breach['breach_date']})"
+                                breach_text += f" ({xml_esc(str(breach['breach_date']))})"
                             if breach.get('domain'):
-                                breach_text += f"<br/>Domain: {breach['domain']}"
+                                breach_text += f"<br/>Domain: {xml_esc(str(breach['domain']))}"
                             if breach.get('data_classes'):
-                                data = ', '.join(str(dc) for dc in breach['data_classes'][:5])
+                                data = ', '.join(xml_esc(str(dc)) for dc in breach['data_classes'][:5])
                                 breach_text += f"<br/>Data: {data}"
 
                             story.append(Paragraph(breach_text, styles['Normal']))
@@ -6097,7 +6260,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
                 if breach_info.get('mitigation_steps'):
                     story.append(Paragraph("<b>Actions Required:</b>", styles['Normal']))
                     for step in breach_info['mitigation_steps'][:3]:
-                        story.append(Paragraph(f"• {step}", styles['Normal']))
+                        story.append(Paragraph(f"&#x2022; {xml_esc(str(step))}", styles['Normal']))
                     story.append(Spacer(1, 0.2*inch))
 
                 story.append(Spacer(1, 0.2*inch))
@@ -6132,8 +6295,8 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
     <style>
         body {{
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
-            color: #ffffff;
+            background: linear-gradient(135deg, #0f1117 0%, #161b22 100%);
+            color: #e6edf3;
             margin: 0;
             padding: 40px;
             min-height: 100vh;
@@ -6143,7 +6306,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
             margin: 0 auto;
         }}
         h1 {{
-            background: linear-gradient(90deg, #00d4ff 0%, #00ff88 100%);
+            background: linear-gradient(90deg, #4f8ff7 0%, #3fb950 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-size: 56px;
@@ -6170,13 +6333,13 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
         .stat-value {{
             font-size: 48px;
             font-weight: bold;
-            background: linear-gradient(90deg, #00d4ff 0%, #00ff88 100%);
+            background: linear-gradient(90deg, #4f8ff7 0%, #3fb950 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }}
         .stat-label {{
             font-size: 18px;
-            color: #b0b0b0;
+            color: #8b949e;
             margin-top: 10px;
         }}
         .results-table {{
@@ -6194,7 +6357,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
             padding: 15px;
             text-align: left;
             font-weight: bold;
-            border-bottom: 2px solid #00d4ff;
+            border-bottom: 2px solid #4f8ff7;
         }}
         td {{
             padding: 15px;
@@ -6203,17 +6366,17 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
         tr:hover {{
             background: rgba(255,255,255,0.05);
         }}
-        .critical {{ color: #ff3366; font-weight: bold; }}
-        .high {{ color: #ffaa00; font-weight: bold; }}
-        .medium {{ color: #ff8800; }}
-        .low {{ color: #00ff88; }}
-        .minimal {{ color: #00d4ff; }}
-        .unknown {{ color: #808080; }}
+        .critical {{ color: #f85149; font-weight: bold; }}
+        .high {{ color: #d29922; font-weight: bold; }}
+        .medium {{ color: #d29922; }}
+        .low {{ color: #3fb950; }}
+        .minimal {{ color: #4f8ff7; }}
+        .unknown {{ color: #6e7681; }}
         .footer {{
             text-align: center;
             margin-top: 60px;
             padding: 30px;
-            color: #808080;
+            color: #6e7681;
         }}
     </style>
 </head>
@@ -6227,21 +6390,21 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
                 <div class="stat-label">Total Emails Analyzed</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" style="color: #ff3366;">{stats['critical']}</div>
+                <div class="stat-value" style="color: #f85149;">{stats['critical']}</div>
                 <div class="stat-label">Critical Risk</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" style="color: #ffaa00;">{stats['high']}</div>
+                <div class="stat-value" style="color: #d29922;">{stats['high']}</div>
                 <div class="stat-label">High Risk</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" style="color: #00ff88;">{stats['low']}</div>
+                <div class="stat-value" style="color: #3fb950;">{stats['low']}</div>
                 <div class="stat-label">Safe Emails</div>
             </div>
         </div>
 
         <div class="results-table">
-            <h2 style="color: #00d4ff; margin-bottom: 20px;">Detailed Analysis Results</h2>
+            <h2 style="color: #4f8ff7; margin-bottom: 20px;">Detailed Analysis Results</h2>
             <table>
                 <tr>
                     <th>Email</th>
@@ -6258,8 +6421,8 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
             if level not in valid_levels:
                 level = 'unknown'
             threats = len(r.get('threats', []))
-            breaches = '✓' if r.get('breach_info', {}).get('found') else '-'
-            dns_score = r.get('dns_security', {}).get('score', 'N/A')
+            breaches = '✓' if (r.get('breach_info') or {}).get('found') else '-'
+            dns_score = (r.get('dns_security') or {}).get('score', 'N/A')
 
             html += f"""
                 <tr>
@@ -6276,41 +6439,41 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
         </div>"""
 
         # Add detailed breach information section
-        breached_emails = [r for r in self.current_results if r.get('breach_info', {}).get('found')]
+        breached_emails = [r for r in self.current_results if (r.get('breach_info') or {}).get('found')]
         if breached_emails:
             html += """
         <div class="results-table" style="margin-top: 40px;">
-            <h2 style="color: #ff3366; margin-bottom: 20px;">🚨 Detailed Breach Information</h2>"""
+            <h2 style="color: #f85149; margin-bottom: 20px;">🚨 Detailed Breach Information</h2>"""
 
             for email_result in breached_emails[:50]:  # Limit to 50 for performance
-                breach_info = email_result.get('breach_info', {})
+                breach_info = email_result.get('breach_info') or {}
                 severity_color = {
-                    'critical': '#ff3366',
-                    'high': '#ffaa00',
-                    'medium': '#ff8800',
-                    'low': '#00ff88'
-                }.get(breach_info.get('severity', 'medium'), '#ff8800')
+                    'critical': '#f85149',
+                    'high': '#d29922',
+                    'medium': '#d29922',
+                    'low': '#3fb950'
+                }.get(breach_info.get('severity', 'medium'), '#d29922')
 
                 html += f"""
             <div style="background: rgba(255,255,255,0.05); padding: 25px; margin: 20px 0; border-radius: 10px; border-left: 4px solid {severity_color};">
                 <h3 style="color: {severity_color}; margin: 0 0 15px 0;">
-                    {esc(str(email_result['email']))}
+                    {esc(str(email_result.get('email', 'N/A')))}
                 </h3>
-                <p style="color: #b0b0b0; margin: 5px 0;">
-                    <strong>Breach Count:</strong> {breach_info['count']} |
+                <p style="color: #8b949e; margin: 5px 0;">
+                    <strong>Breach Count:</strong> {breach_info.get('count', 0)} |
                     <strong>Severity:</strong> <span style="color: {severity_color};">{breach_info.get('severity', 'medium').upper()}</span>
                 </p>"""
 
                 if breach_info.get('details'):
                     html += """
                 <div style="margin-top: 15px;">
-                    <strong style="color: #00d4ff;">Breaches:</strong>"""
+                    <strong style="color: #4f8ff7;">Breaches:</strong>"""
 
                     for breach in breach_info['details'][:5]:  # Show first 5 breaches
                         if isinstance(breach, dict):
                             html += f"""
                     <div style="background: rgba(0,0,0,0.3); padding: 15px; margin: 10px 0; border-radius: 8px;">
-                        <div style="color: #ff3366; font-weight: bold; margin-bottom: 8px;">
+                        <div style="color: #f85149; font-weight: bold; margin-bottom: 8px;">
                             {esc(str(breach.get('name', 'Unknown')))}"""
                             if breach.get('breach_date'):
                                 html += f" ({esc(str(breach['breach_date']))})"
@@ -6319,7 +6482,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
 
                             if breach.get('domain'):
                                 html += f"""
-                        <div style="color: #b0b0b0; font-size: 13px; margin: 3px 0;">
+                        <div style="color: #8b949e; font-size: 13px; margin: 3px 0;">
                             <strong>Domain:</strong> {esc(str(breach['domain']))}
                         </div>"""
 
@@ -6334,7 +6497,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
                             if breach.get('data_classes'):
                                 data_text = ', '.join(esc(str(dc)) for dc in breach['data_classes'][:8])
                                 html += f"""
-                        <div style="color: #ffaa00; font-size: 13px; margin: 3px 0;">
+                        <div style="color: #d29922; font-size: 13px; margin: 3px 0;">
                             <strong>Compromised Data:</strong> {data_text}
                         </div>"""
 
@@ -6346,8 +6509,8 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
 
                 if breach_info.get('mitigation_steps'):
                     html += """
-                <div style="margin-top: 15px; background: rgba(0,255,136,0.1); padding: 15px; border-radius: 8px; border-left: 3px solid #00ff88;">
-                    <strong style="color: #00ff88;">🛡️ Immediate Actions Required:</strong>
+                <div style="margin-top: 15px; background: rgba(63,185,80,0.1); padding: 15px; border-radius: 8px; border-left: 3px solid #3fb950;">
+                    <strong style="color: #3fb950;">🛡️ Immediate Actions Required:</strong>
                     <ol style="margin: 10px 0; padding-left: 20px; color: #d0d0d0;">"""
 
                     for step in breach_info['mitigation_steps'][:5]:
@@ -6362,21 +6525,28 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
                 mitre_details = email_result.get('mitre_details', [])
                 if mitre_details:
                     html += """
-                <div style="margin-top: 15px; background: rgba(68,102,255,0.1); padding: 15px; border-radius: 8px; border-left: 3px solid #4466ff;">
-                    <strong style="color: #4466ff;">🎯 MITRE ATT&CK Techniques:</strong>"""
+                <div style="margin-top: 15px; background: rgba(88,166,255,0.1); padding: 15px; border-radius: 8px; border-left: 3px solid #58a6ff;">
+                    <strong style="color: #58a6ff;">🎯 MITRE ATT&CK Techniques:</strong>"""
 
                     for technique in mitre_details[:3]:  # Show top 3 techniques
                         similarity = technique.get('similarity', 0)
-                        confidence_color = '#00ff88' if similarity > 85 else '#ffaa00' if similarity > 70 else '#ff8800'
+                        confidence_color = '#3fb950' if similarity > 85 else '#d29922' if similarity > 70 else '#f85149'
+
+                        tech_desc = technique.get('description', '')
+                        desc_snippet = ''
+                        if tech_desc:
+                            truncated = str(tech_desc)[:150] + '...' if len(str(tech_desc)) > 150 else str(tech_desc)
+                            desc_snippet = f'<div style="color: #909090; font-size: 11px; margin-top: 3px;">{esc(truncated)}</div>'
 
                         html += f"""
                     <div style="background: rgba(0,0,0,0.2); padding: 10px; margin: 8px 0; border-radius: 6px; border-left: 3px solid {confidence_color};">
                         <div style="color: {confidence_color}; font-weight: bold; font-size: 13px;">
                             {esc(str(technique.get('id', 'N/A')))}: {esc(str(technique.get('name', 'Unknown')))}
                         </div>
-                        <div style="color: #b0b0b0; font-size: 12px; margin-top: 3px;">
-                            Tactic: {esc(str(technique.get('tactic', 'Unknown')))} | Confidence: {similarity:.1f}%
+                        <div style="color: #8b949e; font-size: 12px; margin-top: 3px;">
+                            Tactic: {esc(str(technique.get('tactic', 'Unknown')))} | Severity: {esc(str(technique.get('severity', 'N/A')).upper())} | Confidence: {similarity:.1f}%
                         </div>
+                        {desc_snippet}
                     </div>"""
 
                     html += """
@@ -6386,6 +6556,58 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
             </div>"""
 
             html += """
+        </div>"""
+
+        # Advanced Security Checks section
+        has_advanced_results = any(
+            r.get('dnsbl') or r.get('cert_transparency') or r.get('threatfox') or
+            r.get('dga_analysis') or r.get('parked_domain') or r.get('gravatar')
+            for r in self.current_results[:50]
+        )
+        if has_advanced_results:
+            html += """
+        <div class="results-table" style="margin-top: 40px;">
+            <h2 style="color: #4f8ff7; margin-bottom: 20px;">🛡️ Advanced Security Checks</h2>
+            <table>
+                <tr>
+                    <th>Email</th>
+                    <th>DNSBL</th>
+                    <th>ThreatFox</th>
+                    <th>DGA</th>
+                    <th>Certs</th>
+                    <th>Gravatar</th>
+                    <th>Parked</th>
+                </tr>"""
+
+            for r in self.current_results[:100]:
+                dnsbl = r.get('dnsbl') or {}
+                tfox = r.get('threatfox') or {}
+                dga = r.get('dga_analysis') or {}
+                ct = r.get('cert_transparency') or {}
+                grav = r.get('gravatar') or {}
+                park = r.get('parked_domain') or {}
+
+                dnsbl_str = f'🚫 {esc(str(dnsbl.get("listed_count", 0)))}' if dnsbl.get('listed') else '✅'
+                tfox_str = f'☠️ {esc(str(tfox.get("ioc_count", 0)))}' if tfox.get('found') else '✅'
+                dga_score_val = float(dga.get('dga_score') or 0.0)
+                dga_str = f'⚠️ {dga_score_val:.0%}' if dga.get('is_dga') else '✅'
+                ct_str = esc(str(ct.get('cert_count', 0))) if ct.get('found') else '-'
+                grav_str = '👤' if grav.get('has_profile') else '👻'
+                park_str = '🅿️' if park.get('is_parked') else '✅'
+
+                html += f"""
+                <tr>
+                    <td>{esc(str(r.get('email', 'N/A')))}</td>
+                    <td>{dnsbl_str}</td>
+                    <td>{tfox_str}</td>
+                    <td>{dga_str}</td>
+                    <td>{ct_str}</td>
+                    <td>{grav_str}</td>
+                    <td>{park_str}</td>
+                </tr>"""
+
+            html += """
+            </table>
         </div>"""
 
         html += f"""
@@ -6455,11 +6677,15 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
 
         # Save to file
         settings_file = self.config.base_dir / "settings.json"
-        with open(settings_file, 'w', encoding='utf-8') as f:
-            json.dump(settings, f, indent=2, ensure_ascii=False)
-
-        messagebox.showinfo("Success", "Settings saved and applied successfully!\n\nSome settings may require app restart to fully take effect.")
-        self.log_activity("Settings updated and applied")
+        try:
+            with open(settings_file, 'w', encoding='utf-8') as f:
+                json.dump(settings, f, indent=2, ensure_ascii=False)
+            messagebox.showinfo("Success", "Settings saved and applied successfully!\n\nSome settings may require app restart to fully take effect.")
+            self.log_activity("Settings updated and applied")
+        except Exception as e:
+            logger.error(f"Failed to save settings: {e}")
+            messagebox.showerror("Save Error", f"Settings applied but could not be saved to disk:\n{str(e)}")
+            self.log_activity("Settings applied but not saved (disk error)")
 
     def start_animations(self):
         """Start UI animations"""
@@ -6476,7 +6702,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
                         current_idx = icons.index(current)
                         next_idx = (current_idx + 1) % len(icons)
                         self.logo_label.configure(text=icons[next_idx])
-                    self.root.after(3000, animate_logo)
+                    self.root.after(3000, animate_logo)  # only reschedule if widget alive
             except Exception:
                 pass
 
@@ -6495,7 +6721,7 @@ Risk Level: {result.get('risk_level', 'unknown').upper()}
                             text=text,
                             text_color=COLORS['success']
                         )
-                    self.root.after(5000, animate_connection)
+                    self.root.after(5000, animate_connection)  # only reschedule if widget alive
             except Exception:
                 pass
 

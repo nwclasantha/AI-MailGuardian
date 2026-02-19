@@ -77,7 +77,7 @@ class EmailSecurityAnalyzerApp:
     PYTHON_313_VERSION = (3, 13)
 
     REQUIRED_PACKAGES = [
-        ('customtkinter', 'customtkinter'),
+        # customtkinter is checked separately via _check_customtkinter()
         ('pandas', 'pandas'),
         ('numpy', 'numpy'),
         ('sklearn', 'scikit-learn'),
@@ -140,12 +140,12 @@ class EmailSecurityAnalyzerApp:
                 datefmt='%Y-%m-%d %H:%M:%S'
             )
 
-            # Create logger
-            self.logger = logging.getLogger(__name__)
-            self.logger.setLevel(self.log_level.value)
+            # Configure the ROOT logger so all module loggers inherit handlers
+            root_logger = logging.getLogger()
+            root_logger.setLevel(self.log_level.value)
 
-            # Remove existing handlers
-            self.logger.handlers.clear()
+            # Remove any existing handlers (e.g., from basicConfig)
+            root_logger.handlers.clear()
 
             # File handler with detailed logging
             file_handler = logging.FileHandler(self.log_file, encoding='utf-8')
@@ -161,9 +161,12 @@ class EmailSecurityAnalyzerApp:
             )
             console_handler.setFormatter(console_format)
 
-            # Add handlers to logger
-            self.logger.addHandler(file_handler)
-            self.logger.addHandler(console_handler)
+            # Add handlers to root logger — all module loggers propagate to this
+            root_logger.addHandler(file_handler)
+            root_logger.addHandler(console_handler)
+
+            # Also keep a local reference for main.py usage
+            self.logger = logging.getLogger(__name__)
 
             self.logger.debug(f"Logging initialized. Log file: {self.log_file}")
 
@@ -177,8 +180,11 @@ class EmailSecurityAnalyzerApp:
             self.logger.debug("Setting up environment variables")
 
             # Disable SSL warnings for development
-            import urllib3
-            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+            try:
+                import urllib3
+                urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+            except ImportError:
+                pass  # urllib3 not available yet; will be installed with requests
 
             # Force sentence-transformers to use PyTorch only
             os.environ["USE_TF"] = "0"
@@ -344,15 +350,17 @@ class EmailSecurityAnalyzerApp:
                 if self._install_packages(self.missing_required):
                     print("\n[OK] Packages installed! Please restart the application.")
                     self.logger.info("Package installation completed successfully")
-                    sys.exit(0)
+                    raise DependencyError("Packages installed — please restart the application.")
                 else:
                     print("\n[FAIL] Package installation failed. Please install manually.")
                     self.logger.error("Package installation failed")
-                    sys.exit(1)
+                    raise DependencyError(f"Failed to install required packages: {', '.join(self.missing_required)}")
             else:
                 self.logger.error("Required packages missing and auto-install disabled. Exiting.")
-                sys.exit(1)
+                raise DependencyError(f"Missing required packages: {', '.join(self.missing_required)}")
 
+        except DependencyError:
+            raise  # propagate intentional dependency errors unchanged
         except Exception as e:
             self.logger.error(f"Error handling missing dependencies: {e}", exc_info=True)
             raise DependencyError(f"Failed to handle missing dependencies: {e}")
@@ -399,7 +407,12 @@ class EmailSecurityAnalyzerApp:
                 ("ParticleEffect", "modules.ParticleEffect"),
                 ("RadarChart", "modules.RadarChart"),
 
-                # 3. Core components that only depend on ApplicationConfig
+                # 3. Detection modules (no dependencies on other custom modules)
+                ("DisposableEmailDetector", "modules.DisposableEmailDetector"),
+                ("TyposquattingDetector", "modules.TyposquattingDetector"),
+                ("DGADetector", "modules.DGADetector"),
+
+                # 4. Core components that only depend on ApplicationConfig
                 ("MITRETAXIIConnection", "modules.MITRETAXIIConnection"),
                 ("TechniqueRetriever", "modules.TechniqueRetriever"),
                 ("MachineLearningEngine", "modules.MachineLearningEngine"),
@@ -504,8 +517,8 @@ class EmailSecurityAnalyzerApp:
                 except Exception as e:
                     self.logger.debug(f"Error closing GUI: {e}")
 
-            # Flush log handlers
-            for handler in self.logger.handlers:
+            # Flush log handlers (root logger owns the handlers, not child loggers)
+            for handler in logging.getLogger().handlers:
                 handler.flush()
 
             self.logger.info("Cleanup completed")
